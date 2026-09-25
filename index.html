@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#152522">
+  <meta name="description" content="UPCAST learns factorized world transitions for geometry-aware video generation. Explore the method, synchronized rollouts, long-horizon behavior, and geometric evaluation.">
+  <title>UPCAST | Factorized World Transitions</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/media/hero.jpg" as="image">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol>
+    <symbol id="icon-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+    <symbol id="icon-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="icon-expand" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="icon-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Zm0 0v6h6M8 13h8M8 17h8"/></symbol>
+    <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  </svg>
+
+  <header class="site-header" id="top">
+    <a class="brand" href="#top" aria-label="UPCAST home"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>UPCAST</a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="#idea">Idea</a><a href="#explore">Explore</a><a href="#horizon">Long horizon</a><a href="#geometry">Geometry</a><a href="#results">Results</a>
+    </nav>
+    <div class="header-actions">
+      <a class="header-paper" href="#method">Method <svg class="icon"><use href="#icon-arrow"/></svg></a>
+      <button class="menu-toggle icon-button" id="menuToggle" type="button" aria-label="Open navigation" aria-expanded="false"><svg class="icon"><use href="#icon-menu"/></svg></button>
+    </div>
+  </header>
+  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation" hidden>
+    <a href="#idea">Idea</a><a href="#explore">Explore</a><a href="#horizon">Long horizon</a><a href="#geometry">Geometry</a><a href="#results">Results</a><a href="#method">Method</a>
+  </nav>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <video class="hero-video" autoplay muted loop playsinline poster="assets/media/hero.jpg" preload="metadata" aria-hidden="true"><source src="assets/media/hero.mp4" type="video/mp4"></video>
+      <div class="hero-wash"></div>
+      <div class="hero-inner content-width">
+        <p class="eyebrow hero-eyebrow"><span class="eyebrow-line"></span> Geometry-aware video world models</p>
+        <h1 id="hero-title">UPCAST<span class="hero-period">.</span></h1>
+        <p class="hero-subtitle">Learning factorized world transitions for geometry-aware video generation.</p>
+        <p class="hero-summary">Shared physical structure. Private visual detail. One standalone video model.</p>
+        <div class="hero-links">
+          <a class="button button-light" href="#explore">Explore rollouts <svg class="icon"><use href="#icon-arrow"/></svg></a>
+          <a class="button button-outline" href="#method">See the method <svg class="icon"><use href="#icon-arrow"/></svg></a>
+        </div>
+      </div>
+      <div class="hero-bottom content-width"><span>REAL ESTATE10K · GENERATED ROLLOUTS</span><a href="#idea" aria-label="Scroll to the idea"><svg class="icon"><use href="#icon-down"/></svg></a><span>01 / 06</span></div>
+    </section>
+
+    <section class="metrics-band" aria-label="Key results">
+      <div class="content-width metrics-grid">
+        <div class="metric"><strong>497.8</strong><span>64-frame FVD <em>↓</em></span><small>vs. 534.9 Geometry Forcing</small></div>
+        <div class="metric"><strong>3.88</strong><span>JEDi <em>↓</em></span><small>vs. 4.40 Geometry Forcing</small></div>
+        <div class="metric"><strong>256</strong><span>frames</span><small>long-horizon rollout</small></div>
+        <div class="metric"><strong>13.94</strong><span>PSNR <em>↑</em></span><small>vs. 12.44 Geometry Forcing</small></div>
+      </div>
+    </section>
+
+    <section class="section idea-section" id="idea" aria-labelledby="idea-title">
+      <div class="content-width">
+        <div class="section-heading two-column-heading">
+          <div><p class="eyebrow"><span class="eyebrow-line"></span> 01 / The idea</p><h2 id="idea-title">Structure is not the whole scene.</h2></div>
+          <p>Geometry carries layout and correspondence; appearance retains the texture, illumination, and detail needed for a believable future. UPCAST learns both as complementary parts of a predictive transition.</p>
+        </div>
+        <div class="idea-figure figure-shell">
+          <img src="assets/media/intro_overview.svg" alt="An overview of one-way geometric alignment, factorized physical and appearance transitions, and standalone RGB generation." loading="lazy">
+          <div class="figure-foot"><span>FROM ALIGNMENT TO FACTORIZED PREDICTION</span><button class="figure-expand icon-button" type="button" data-figure="assets/media/intro_overview.svg" aria-label="Enlarge overview figure" title="Enlarge figure"><svg class="icon"><use href="#icon-expand"/></svg></button></div>
+        </div>
+        <div class="idea-steps">
+          <article><span class="step-index">01</span><h3>Anchor the physical</h3><p>A geometry-anchored shared vocabulary organizes transitions seen by video and geometric representations.</p></article>
+          <article><span class="step-index">02</span><h3>Keep appearance private</h3><p>A continuous pathway preserves visual information that a geometric state alone cannot specify.</p></article>
+          <article><span class="step-index">03</span><h3>Consolidate knowledge</h3><p>The learned corrections transfer into the original autoregressive backbone; auxiliary modules leave at inference.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section explorer-section" id="explore" aria-labelledby="explore-title">
+      <div class="content-width">
+        <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span> 02 / Video explorer</p><h2 id="explore-title">Watch the future unfold.</h2><p>Synchronized camera-conditioned rollouts, from the same first frame and camera path.</p></div>
+        <div class="scene-picks" role="group" aria-label="Choose a scene">
+          <button class="scene-pick active" type="button" aria-pressed="true" data-scene="living"><img src="assets/media/living-upcast.jpg" alt=""><span>Living room</span></button>
+          <button class="scene-pick" type="button" aria-pressed="false" data-scene="kitchen"><img src="assets/media/kitchen-upcast.jpg" alt=""><span>Kitchen</span></button>
+          <button class="scene-pick" type="button" aria-pressed="false" data-scene="aerial"><img src="assets/media/aerial-upcast.jpg" alt=""><span>Aerial view</span></button>
+        </div>
+        <div class="compare-grid" id="compareGrid">
+          <div class="compare-item"><div class="video-frame"><video id="compareRef" muted loop playsinline preload="metadata" poster="assets/media/living-reference.jpg"><source src="assets/media/living-reference.mp4" type="video/mp4"></video></div><div class="video-label"><span>Reference</span><small>Ground truth</small></div></div>
+          <div class="compare-item is-ours"><div class="video-frame"><video id="compareOurs" muted loop playsinline preload="metadata" poster="assets/media/living-upcast.jpg"><source src="assets/media/living-upcast.mp4" type="video/mp4"></video></div><div class="video-label"><span>UPCAST</span><small>Ours</small></div></div>
+          <div class="compare-item"><div class="video-frame"><video id="compareGF" muted loop playsinline preload="metadata" poster="assets/media/living-geometry-forcing.jpg"><source src="assets/media/living-geometry-forcing.mp4" type="video/mp4"></video></div><div class="video-label"><span>Geometry Forcing</span><small>Baseline</small></div></div>
+        </div>
+        <div class="player-controls">
+          <button type="button" class="icon-button player-button" id="comparePlay" aria-label="Play synchronized videos" title="Play or pause"><svg class="icon"><use href="#icon-play"/></svg></button>
+          <span class="frame-count" id="compareFrame">FRAME 01 / 64</span>
+          <input type="range" id="compareSeek" min="0" max="63" value="0" aria-label="Scrub comparison videos">
+          <span class="player-duration">8.0 S</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section factor-section" id="factorization" aria-labelledby="factor-title">
+      <div class="content-width factor-layout">
+        <div class="factor-copy"><p class="eyebrow"><span class="eyebrow-line"></span> 03 / Factorized view</p><h2 id="factor-title">Two roles, one prediction.</h2><p>The physical pathway carries geometry-compatible structure. The private pathway retains complementary visual appearance, informed by frozen DINOv2 features. Coupling combines both for future visual reconstruction.</p>
+          <div class="mode-tabs" role="group" aria-label="Representation view"><button class="mode-tab" type="button" aria-pressed="false" data-mode="physical">Physical</button><button class="mode-tab" type="button" aria-pressed="false" data-mode="appearance">Appearance</button><button class="mode-tab active" type="button" aria-pressed="true" data-mode="unified">Unified</button></div>
+          <div class="mode-description" id="modeDescription">A structural depth view and full RGB appearance meet in the predictive visual state.</div>
+          <div class="factor-stat"><strong>0.25</strong><span>Cross-space CKA for fused physical and private states</span></div>
+        </div>
+        <div class="factor-visual">
+          <div class="factor-stage" id="factorStage" data-mode="unified">
+            <video class="factor-depth" id="factorDepth" autoplay muted loop playsinline preload="metadata" poster="assets/media/geometry-upcast-depth.jpg"><source src="assets/media/geometry-upcast-depth.mp4" type="video/mp4"></video>
+            <video class="factor-rgb" id="factorRGB" autoplay muted loop playsinline preload="metadata" poster="assets/media/geometry-upcast-rgb.jpg"><source src="assets/media/geometry-upcast-rgb.mp4" type="video/mp4"></video>
+            <div class="factor-divider" aria-hidden="true"><span></span></div>
+            <span class="stage-tag tag-left">STRUCTURE</span><span class="stage-tag tag-right">APPEARANCE</span>
+          </div>
+          <input class="factor-split" id="factorSplit" type="range" min="5" max="95" value="50" aria-label="Adjust structure and appearance split">
+          <p class="visual-note">Image-space illustration using estimated depth and RGB; the learned states are latent, not per-pixel masks.</p>
+        </div>
+      </div>
+      <div class="content-width teacher-strip"><div class="teacher-heading"><span>FROZEN FEATURE SOURCES · TRAINING ONLY</span><p>Complementary views of the same observations, removed before inference.</p></div><div class="teacher-grid"><div class="teacher-item"><div class="teacher-glyph physical-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></div><strong>PAGE-4D</strong><span>Geometric structure and point maps</span></div><div class="teacher-item"><div class="teacher-glyph dino-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></div><strong>DINOv2</strong><span>Frame-wise semantic appearance</span></div><div class="teacher-item"><div class="teacher-glyph vjepa-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></div><strong>V-JEPA</strong><span>Spatiotemporal predictive features</span></div></div></div>
+    </section>
+
+    <section class="section horizon-section" id="horizon" aria-labelledby="horizon-title">
+      <div class="content-width">
+        <div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 04 / Long-horizon generation</p><h2 id="horizon-title">Beyond the training horizon.</h2></div><p>Our model is trained on 16-frame clips. Explore a 256-frame autoregressive rollout, then inspect how RGB fidelity changes over time across the paired evaluation cohort.</p></div>
+        <div class="horizon-topline"><span>REAL ESTATE10K</span><span>256 FRAMES · 16× TRAINING HORIZON</span></div>
+        <div class="horizon-showcase"><div class="horizon-video"><video id="horizonOurs" muted loop playsinline preload="metadata" poster="assets/media/horizon-upcast-128.jpg"><source src="assets/media/horizon-upcast.mp4" type="video/mp4"></video><span>UPCAST · AUTOREGRESSIVE ROLLOUT</span></div><div class="horizon-frames"><div><img src="assets/media/horizon-upcast-001.jpg" alt="Frame 2 of the rollout"><span>02</span></div><div><img src="assets/media/horizon-upcast-064.jpg" alt="Frame 65 of the rollout"><span>65</span></div><div><img src="assets/media/horizon-upcast-128.jpg" alt="Frame 129 of the rollout"><span>129</span></div><div><img src="assets/media/horizon-upcast-192.jpg" alt="Frame 193 of the rollout"><span>193</span></div><div><img src="assets/media/horizon-upcast-255.jpg" alt="Frame 256 of the rollout"><span>256</span></div></div></div>
+        <div class="player-controls horizon-controls"><button type="button" class="icon-button player-button" id="horizonPlay" aria-label="Play long-horizon videos" title="Play or pause"><svg class="icon"><use href="#icon-play"/></svg></button><span class="frame-count" id="horizonFrame">FRAME 001 / 256</span><input type="range" id="horizonSeek" min="0" max="255" value="0" aria-label="Scrub long-horizon videos"><span class="player-duration">32.0 S</span></div>
+        <div class="drift-panel"><div class="drift-heading"><div><h3>Frame-wise RGB fidelity</h3><p>PSNR from cohort-mean RGB error · conditioning frame excluded</p></div><div class="drift-switch" role="group" aria-label="Evaluation horizon"><button type="button" class="active" data-chart="short" aria-pressed="true">64 frames <small>n=100</small></button><button type="button" data-chart="long" aria-pressed="false">256 frames <small>n=12</small></button></div></div><div class="chart-wrap"><svg id="driftChart" role="img" aria-label="Frame-wise PSNR from cohort-mean RGB error of UPCAST and Geometry Forcing"></svg></div><div class="chart-legend"><span><i class="legend-line ours"></i> UPCAST</span><span><i class="legend-line gf"></i> Geometry Forcing</span><span class="chart-note">Higher is better ↑</span></div></div>
+      </div>
+    </section>
+
+    <section class="section geometry-section" id="geometry" aria-labelledby="geometry-title">
+      <div class="content-width"><div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 05 / Geometry under domain shift</p><h2 id="geometry-title">Look beyond RGB.</h2></div><p>Zero-shot ARKitScenes probes how generated views hold up against sensor-referenced structure. The outcome is a balance, not a claim of uniform geometric superiority.</p></div>
+        <div class="geometry-layout">
+          <div class="geometry-player"><div class="geometry-toolbar"><span>ARKITSCENES · GENERATED VIEW</span><div class="geometry-toggle" role="group" aria-label="Geometry visualization"><button type="button" class="active" data-geo-view="rgb" aria-pressed="true">RGB</button><button type="button" data-geo-view="depth" aria-pressed="false">Estimated depth</button></div></div><div class="geometry-videos"><div><video id="geoOurs" autoplay muted loop playsinline preload="metadata" poster="assets/media/geometry-upcast-rgb.jpg"><source src="assets/media/geometry-upcast-rgb.mp4" type="video/mp4"></video><span>UPCAST</span></div><div><video id="geoGF" autoplay muted loop playsinline preload="metadata" poster="assets/media/geometry-geometry-forcing-rgb.jpg"><source src="assets/media/geometry-geometry-forcing-rgb.mp4" type="video/mp4"></video><span>Geometry Forcing</span></div></div><p class="visual-note">Depth uses the same frozen estimator and color scale for both generated videos.</p></div>
+          <div class="geometry-metrics"><h3>Sensor-referenced evaluation</h3><p>12 matched 64-frame clips · zero-shot</p><div class="geo-metric"><span>Depth AbsRel <em>↓</em></span><div><strong>0.194</strong><small>UPCAST</small></div><div><strong>0.216</strong><small>GF</small></div></div><div class="geo-metric"><span>F@10 cm <em>↑</em></span><div><strong>0.627</strong><small>UPCAST</small></div><div><strong>0.621</strong><small>GF</small></div></div><div class="geo-metric"><span>Chamfer-L1 (m) <em>↓</em></span><div><strong>0.105</strong><small>UPCAST</small></div><div><strong>0.101</strong><small>GF</small></div></div><div class="geo-metric"><span>Pose R@10 <em>↑</em></span><div><strong>0.265</strong><small>UPCAST</small></div><div><strong>0.317</strong><small>GF</small></div></div><p class="geometry-takeaway">Pose R@10 uses 10 cm / 10°. Depth and point-cloud recall improve; surface and pose results are mixed.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section method-section" id="method" aria-labelledby="method-title"><div class="content-width"><div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> Inside the method</p><h2 id="method-title">Learn together. Generate alone.</h2></div><p>Factorized transition learning, a conditional teacher, and selective knowledge transfer are training-time mechanisms. At inference, only the original DFoT backbone remains.</p></div><div class="process-flow" aria-label="Three stages: acquire factorized transitions, transfer predictive corrections, and generate with the original backbone"><div class="process-step"><span class="process-number">01 / ACQUIRE</span><div class="process-glyph glyph-acquire" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><strong>Factorize the transition</strong><small>Shared physical + private appearance</small></div><div class="process-step"><span class="process-number">02 / TRANSFER</span><div class="process-glyph glyph-transfer" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><strong>Teach the backbone</strong><small>Selective predictive corrections</small></div><div class="process-step"><span class="process-number">03 / GENERATE</span><div class="process-glyph glyph-generate" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><strong>Roll out standalone</strong><small>Original autoregressive DFoT</small></div></div><div class="method-figure figure-shell"><img src="assets/media/method_overview.svg" alt="UPCAST method: factorized transition learning, selective knowledge transfer, and backbone-only inference." loading="lazy"><div class="figure-foot"><span>UPCAST METHOD OVERVIEW</span><button class="figure-expand icon-button" type="button" data-figure="assets/media/method_overview.svg" aria-label="Enlarge method figure" title="Enlarge figure"><svg class="icon"><use href="#icon-expand"/></svg></button></div></div></div></section>
+
+    <section class="section results-section" id="results" aria-labelledby="results-title"><div class="content-width"><div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 06 / Main results</p><h2 id="results-title">Quality that carries forward.</h2></div><p>Camera-conditioned RealEstate10K evaluation. All methods share the same initial frame, camera trajectories, and sampling seeds.</p></div><div class="results-table-wrap"><table class="results-table"><caption>64-frame rollouts · 100 matched videos</caption><thead><tr><th scope="col">Method</th><th scope="col">FVD ↓</th><th scope="col">FID ↓</th><th scope="col">PSNR ↑</th><th scope="col">JEDi ↓</th><th scope="col">RPE ↓</th></tr></thead><tbody><tr><th scope="row">DFoT</th><td>654.0</td><td>69.46</td><td>13.64</td><td>5.65</td><td>0.176</td></tr><tr><th scope="row">REPA</th><td>643.6</td><td>69.42</td><td>13.33</td><td>6.77</td><td>0.283</td></tr><tr><th scope="row">VideoREPA</th><td>795.4</td><td>76.09</td><td>11.48</td><td>9.98</td><td>0.282</td></tr><tr><th scope="row">Geometry Forcing</th><td>534.9</td><td>65.15</td><td>12.44</td><td>4.40</td><td>0.192</td></tr><tr class="ours-row"><th scope="row">UPCAST</th><td><strong>497.8</strong></td><td><strong>61.26</strong></td><td><strong>13.94</strong></td><td><strong>3.88</strong></td><td><strong>0.161</strong></td></tr></tbody></table></div><p class="results-note">RPE uses the first 12 videos; other columns use all 100. Full protocols and additional results are in the paper.</p></div></section>
+
+    <section class="closing"><div class="content-width closing-inner"><p class="eyebrow"><span class="eyebrow-line"></span> Explore the work</p><h2>World transitions need<br><em>both sides of the scene.</em></h2><a class="button button-light" href="#method">See the method <svg class="icon"><use href="#icon-arrow"/></svg></a></div></section>
+  </main>
+  <footer class="site-footer"><div class="content-width"><a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>UPCAST</a><p>Learning Factorized World Transitions for Geometry-Aware Video World Models</p><a href="#top">Back to top ↑</a></div></footer>
+
+  <dialog class="figure-dialog" id="figureDialog" aria-label="Enlarged paper figure"><button class="icon-button dialog-close" id="figureClose" type="button" aria-label="Close figure"><svg class="icon"><use href="#icon-close"/></svg></button><img id="figureDialogImage" alt=""></dialog>
+  <script src="assets/data/curves.js" defer></script>
+  <script src="assets/lucide.min.js" defer></script>
+  <script src="assets/site.js" defer></script>
+</body>
+</html>
