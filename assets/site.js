@@ -67,17 +67,46 @@ function player({ videos, playButton, seek, counter, frames, fps = 8 }) {
     }
   };
   playButton.addEventListener('click', () => setPlaying(!playing));
-  seek.addEventListener('input', () => {
-    const time = Number(seek.value) / fps;
+  const seekFrame = (frame) => {
+    seek.value = String(frame);
+    const time = Number(frame) / fps;
     videos.forEach((video) => { if (video.readyState >= 1) video.currentTime = time; });
     update();
-  });
+  };
+  seek.addEventListener('input', () => seekFrame(seek.value));
   videos[0].addEventListener('timeupdate', () => { if (!playing) update(); });
-  return { get playing() { return playing; }, setPlaying };
+  return { get playing() { return playing; }, setPlaying, seekFrame };
 }
+
+const ideaSteps = {
+  alignment: { image: 'intro-alignment.png', alt: 'The same video provides geometric and visual representations.', number: '01 / THE OBSERVATION', title: 'One video, complementary evidence.', text: "A geometric representation can preserve layout and correspondence, but it cannot alone specify the scene's color, texture, and lighting.", key: 'Same observation · different predictive roles' },
+  factorized: { image: 'intro-factorized.png', alt: 'A shared physical codebook and a private appearance path form a coupled visual state.', number: '02 / THE TRANSITION', title: 'Share the structure. Keep the detail.', text: 'A geometry-anchored codebook organizes physical changes across representations; a continuous appearance path carries complementary visual change. Coupling lets both inform visual prediction.', key: 'Q: shared physical · A: private appearance · U: coupled visual' },
+  generation: { image: 'intro-generation.png', alt: 'The trained DFoT backbone rolls out RGB video without auxiliary modules.', number: '03 / THE DEPLOYMENT', title: 'The video model stands on its own.', text: 'Training-time representations improve the original backbone. At inference, the model takes an input frame and controls and rolls out RGB video without the auxiliary pathways.', key: 'Training-time knowledge · backbone-only inference' }
+};
+$$('[data-idea]').forEach((button) => button.addEventListener('click', () => {
+  const step = ideaSteps[button.dataset.idea];
+  $('#ideaPanelImage').src = `assets/media/${step.image}`;
+  $('#ideaPanelImage').alt = step.alt;
+  $('#ideaPanelNumber').textContent = step.number;
+  $('#ideaPanelTitle').textContent = step.title;
+  $('#ideaPanelText').textContent = step.text;
+  $('#ideaPanelKey').textContent = step.key;
+  $$('[data-idea]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-selected', String(tab === button)); });
+}));
 
 const compareVideos = [$('#compareRef'), $('#compareOurs'), $('#compareGF')];
 const compare = player({ videos: compareVideos, playButton: $('#comparePlay'), seek: $('#compareSeek'), counter: $('#compareFrame'), frames: 64 });
+$$('[data-video-scrub]').forEach((frame) => {
+  let dragging = false;
+  const scrub = (event) => {
+    const bounds = frame.getBoundingClientRect();
+    compare.seekFrame(Math.max(0, Math.min(63, Math.round((event.clientX - bounds.left) / bounds.width * 63))));
+  };
+  frame.addEventListener('pointerdown', (event) => { dragging = true; compare.setPlaying(false); frame.setPointerCapture(event.pointerId); scrub(event); });
+  frame.addEventListener('pointermove', (event) => { if (dragging) scrub(event); });
+  frame.addEventListener('pointerup', () => { dragging = false; });
+  frame.addEventListener('pointercancel', () => { dragging = false; });
+});
 const roleNames = ['reference', 'upcast', 'geometry-forcing'];
 $$('.scene-pick').forEach((button) => button.addEventListener('click', () => {
   if (button.classList.contains('active')) return;
@@ -90,54 +119,68 @@ $$('.scene-pick').forEach((button) => button.addEventListener('click', () => {
   $('#compareFrame').textContent = 'FRAME 01 / 64';
   if (wasPlaying) compareVideos[0].addEventListener('loadedmetadata', () => compare.setPlaying(true), { once: true });
 }));
-player({ videos: [$('#horizonOurs')], playButton: $('#horizonPlay'), seek: $('#horizonSeek'), counter: $('#horizonFrame'), frames: 256 });
-
-const factorStage = $('#factorStage');
-const factorSplit = $('#factorSplit');
-$('#factorRGB').addEventListener('timeupdate', () => {
-  if (Math.abs($('#factorDepth').currentTime - $('#factorRGB').currentTime) > .25 && $('#factorDepth').readyState >= 2) $('#factorDepth').currentTime = $('#factorRGB').currentTime;
-});
-const descriptions = {
-  physical: 'Geometry-compatible transition information is anchored by a shared codebook.',
-  appearance: 'A continuous private pathway retains complementary visual detail, with DINOv2 semantic features during training.',
-  unified: 'A structural depth view and full RGB appearance meet in the predictive visual state.'
+$$('[data-method]').forEach((button) => button.addEventListener('click', () => {
+  $$('[data-method]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-selected', String(tab === button)); });
+  $$('[data-method-panel]').forEach((panel) => { panel.hidden = panel.dataset.methodPanel !== button.dataset.method; });
+}));
+const featureExplanations = {
+  page: 'PAGE-4D provides geometry features and point maps that anchor the shared physical vocabulary.',
+  dino: 'DINOv2 supplies patch-level visual structure to the continuous appearance path and the visual reconstruction target.',
+  vjepa: 'V-JEPA supplies a frozen spatiotemporal predictive regularizer during training; it is not an inference module or a third latent branch.'
 };
-function updateFactorSplit() {
-  const split = Number(factorSplit.value);
-  factorStage.querySelector('.factor-rgb').style.clipPath = `inset(0 0 0 ${split}%)`;
-  factorStage.querySelector('.factor-divider').style.left = `${split}%`;
-}
-factorSplit.addEventListener('input', updateFactorSplit);
-$$('.mode-tab').forEach((button) => button.addEventListener('click', () => {
-  const mode = button.dataset.mode;
-  factorStage.dataset.mode = mode;
-  factorSplit.disabled = mode !== 'unified';
-  if (mode === 'unified') updateFactorSplit();
-  if (mode === 'physical') factorStage.querySelector('.factor-rgb').style.clipPath = 'inset(0 0 0 100%)';
-  if (mode === 'appearance') factorStage.querySelector('.factor-rgb').style.clipPath = 'inset(0 0 0 0)';
-  $('#modeDescription').textContent = descriptions[mode];
-  $$('.mode-tab').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-pressed', String(tab === button)); });
+$$('[data-feature]').forEach((button) => button.addEventListener('click', () => {
+  $('#featureExplain').textContent = featureExplanations[button.dataset.feature];
+  $$('[data-feature]').forEach((item) => { item.classList.toggle('active', item === button); item.setAttribute('aria-pressed', String(item === button)); });
 }));
 
-const geometryVideos = [$('#geoOurs'), $('#geoGF')];
-geometryVideos[0].addEventListener('timeupdate', () => {
-  if (Math.abs(geometryVideos[0].currentTime - geometryVideos[1].currentTime) > .25 && geometryVideos[1].readyState >= 2) geometryVideos[1].currentTime = geometryVideos[0].currentTime;
-});
+const geometryFrames = [2, 9, 17, 25, 33, 41, 49, 57, 64];
+const geometryCompare = $('#geometryCompare');
+const geoHandle = $('#geoHandle');
+let geometryView = 'rgb';
+function updateGeometryFrame() {
+  const frame = geometryFrames[Number($('#geoFrameRange').value)];
+  const name = String(frame).padStart(2, '0');
+  $('#geoFrameLabel').textContent = `FRAME ${name} / 64`;
+  $('#geoOurs').src = `assets/media/geometry-upcast-${geometryView}-${name}.jpg`;
+  $('#geoGF').src = `assets/media/geometry-geometry-forcing-${geometryView}-${name}.jpg`;
+  $('#geoOursFull').src = $('#geoOurs').src;
+  $('#geoGFFull').src = $('#geoGF').src;
+  $('#geoReference').src = `assets/media/geometry-reference-${name}.jpg`;
+  $('#geoReference').alt = `Reference ARKitScenes frame ${frame}`;
+  $('#geoOursFull').alt = `Complete UPCAST ${geometryView} frame ${frame}`;
+  $('#geoGFFull').alt = `Complete Geometry Forcing ${geometryView} frame ${frame}`;
+}
+$('#geoFrameRange').addEventListener('input', updateGeometryFrame);
 $$('[data-geo-view]').forEach((button) => button.addEventListener('click', () => {
-  const view = button.dataset.geoView;
-  if (button.classList.contains('active')) return;
-  const time = geometryVideos[0].currentTime;
-  geometryVideos.forEach((video, index) => {
-    const method = index === 0 ? 'upcast' : 'geometry-forcing';
-    setSource(video, `assets/media/geometry-${method}-${view}.mp4`, `assets/media/geometry-${method}-${view}.jpg`);
-    video.addEventListener('loadedmetadata', () => { video.currentTime = time; video.play().catch(() => {}); }, { once: true });
-  });
+  geometryView = button.dataset.geoView;
   $$('[data-geo-view]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-pressed', String(tab === button)); });
+  updateGeometryFrame();
 }));
+function setGeometrySplit(value) {
+  const split = Math.max(5, Math.min(95, Math.round(value)));
+  geometryCompare.style.setProperty('--split', `${split}%`);
+  geoHandle.setAttribute('aria-valuenow', String(split));
+  geoHandle.setAttribute('aria-valuetext', `${split}% UPCAST, ${100 - split}% Geometry Forcing`);
+}
+let draggingGeometry = false;
+function dragGeometry(event) {
+  const bounds = geometryCompare.getBoundingClientRect();
+  setGeometrySplit((event.clientX - bounds.left) / bounds.width * 100);
+}
+geometryCompare.addEventListener('pointerdown', (event) => { draggingGeometry = true; geometryCompare.setPointerCapture(event.pointerId); dragGeometry(event); });
+geometryCompare.addEventListener('pointermove', (event) => { if (draggingGeometry) dragGeometry(event); });
+geometryCompare.addEventListener('pointerup', () => { draggingGeometry = false; });
+geometryCompare.addEventListener('pointercancel', () => { draggingGeometry = false; });
+geoHandle.addEventListener('keydown', (event) => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  const value = Number(geoHandle.getAttribute('aria-valuenow'));
+  setGeometrySplit(event.key === 'Home' ? 5 : event.key === 'End' ? 95 : value + (event.key === 'ArrowRight' ? 5 : -5));
+});
 
 const chart = $('#driftChart');
 const svgNS = 'http://www.w3.org/2000/svg';
-let chartData, chartMode = 'short';
+let chartData;
 function svgNode(tag, attributes = {}) {
   const node = document.createElementNS(svgNS, tag);
   for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
@@ -146,7 +189,7 @@ function svgNode(tag, attributes = {}) {
 }
 function drawChart() {
   if (!chartData) return;
-  const { upcast, geometryForcing, frames } = chartData[chartMode];
+  const { upcast, geometryForcing, frames } = chartData.short;
   const W = 1000, H = 258, L = 43, R = 12, T = 13, B = 28;
   const both = [...upcast.slice(1), ...geometryForcing.slice(1)];
   const min = Math.floor(Math.min(...both) - .5), max = Math.ceil(Math.max(...both) + .5);
@@ -158,7 +201,7 @@ function drawChart() {
     svgNode('line', { x1: L, y1: height, x2: W - R, y2: height, stroke: '#527064', 'stroke-opacity': '.55', 'stroke-width': 1 });
     svgNode('text', { x: L - 12, y: height + 3, 'text-anchor': 'end', fill: '#9fb6a5', 'font-size': 11, 'font-family': 'Manrope, Arial' }).textContent = String(value);
   }
-  (frames === 64 ? [2, 16, 32, 48, 64] : [2, 64, 128, 192, 256]).forEach((frame) => {
+  [2, 16, 32, 48, 64].forEach((frame) => {
     svgNode('text', { x: x(frame - 1), y: H - 2, 'text-anchor': frame === 2 ? 'start' : frame === frames ? 'end' : 'middle', fill: '#9fb6a5', 'font-size': 11, 'font-family': 'Manrope, Arial' }).textContent = String(frame);
   });
   const path = (values) => values.slice(1).map((value, offset) => `${offset ? 'L' : 'M'}${x(offset + 1).toFixed(1)},${y(value).toFixed(1)}`).join(' ');
@@ -185,11 +228,6 @@ function drawChart() {
 chartData = window.UPCAST_CURVES;
 if (chartData) drawChart();
 else chart.outerHTML = '<p>Chart data unavailable.</p>';
-$$('[data-chart]').forEach((button) => button.addEventListener('click', () => {
-  chartMode = button.dataset.chart;
-  $$('[data-chart]').forEach((item) => { item.classList.toggle('active', item === button); item.setAttribute('aria-pressed', String(item === button)); });
-  drawChart();
-}));
 
 const dialog = $('#figureDialog');
 $$('[data-figure]').forEach((button) => button.addEventListener('click', () => {
@@ -199,4 +237,4 @@ $$('[data-figure]').forEach((button) => button.addEventListener('click', () => {
 }));
 $('#figureClose').addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
-if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) $$('.hero-video, .factor-stage video, .geometry-videos video').forEach((video) => video.pause());
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) $('.hero-video').pause();

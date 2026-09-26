@@ -11,12 +11,11 @@ The page vendors Lucide 0.468.0 for its interface icons. Its license is in `asse
 `tools/build_media.py` creates web-sized videos and images from the local evaluation outputs. It uses:
 
 - RealEstate10K 64-frame paired clips from `main_v15_paper/combined/long100` for the hero and video explorer.
-- A 256-frame RealEstate10K rollout from `main_v15_paper/generation/stress100` for the long-horizon viewer.
-- Cached ARKitScenes generated RGB and independent depth-estimator outputs for the geometry viewer.
-- Paired RealEstate10K 64-frame (100 clips) and 256-frame (12 clips) outputs to compute mean frame-wise PSNR for the interactive curve.
+- Cached ARKitScenes generated RGB and independent depth-estimator outputs for the synchronized frame comparison. Depth images share one display scale across the two methods.
+- Paired RealEstate10K 64-frame (100 clips) outputs to compute mean frame-wise PSNR for the interactive curve.
 - Paper figures from `/mnt/exdata/iclr2027`.
 
-The physical/appearance split view is an image-space illustration, not a direct decoding or spatial attribution of learned latent states. Numerical evaluations and protocols are reported in the paper.
+The physical/appearance diagram illustrates model pathways rather than a spatial attribution of learned latent states. Numerical evaluations and protocols are reported in the paper.
 
 ## Refreshing assets
 

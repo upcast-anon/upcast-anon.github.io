@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -17,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 MEDIA = ROOT / "assets" / "media"
 DATA = ROOT / "assets" / "data"
 BASE = Path("/mnt/exdata/GeometryForcing/output/evaluations/main_v15_paper")
-ARKIT = Path("/mnt/exdata/GeometryForcing/output/evaluations/arkitscenes-100")
-CACHE = Path("/mnt/exdata/GeometryForcing/metric_cache/arkitscenes-100/depth/depth-anything_Depth-Anything-V2-Metric-Indoor-Small-hf")
+ARKIT_PILOT = Path("/mnt/exdata/GeometryForcing/output/evaluations/arkitscenes-pilot")
+PILOT_CACHE = Path("/mnt/exdata/GeometryForcing/metric_cache/arkitscenes-pilot/depth/depth-anything_Depth-Anything-V2-Metric-Indoor-Small-hf")
 PAPER = Path("/mnt/exdata/iclr2027")
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 
@@ -70,29 +69,10 @@ def psnr_curve(folder: Path, count: int) -> list[float]:
     return (10 * np.log10(255 * 255 / np.maximum(cohort_mse, 1e-8))).round(3).tolist()
 
 
-def stress_files(method: str) -> list[Path]:
-    folders = list((BASE / "generation" / "stress12" / method).glob("chunk_*_2/raw/*/data.npz"))
-    return sorted(folders, key=lambda p: (int(p.parts[-4].split("_")[1]), int(p.parts[-2])))
-
-
-def stress_curve(method: str) -> list[float]:
-    result = []
-    files = stress_files(method)
-    assert len(files) == 12, (method, len(files))
-    for path in files:
-        with np.load(path) as archive:
-            gt, generated = rgb_frames(archive["gt"]), rgb_frames(archive["gen"])
-        diff = gt.astype(np.float32) - generated.astype(np.float32)
-        mse = np.mean(diff * diff, axis=(1, 2, 3))
-        result.append(mse)
-    cohort_mse = np.mean(result, axis=0)
-    return (10 * np.log10(255 * 255 / np.maximum(cohort_mse, 1e-8))).round(3).tolist()
-
-
 def depth_frames(array: np.ndarray, near: float, far: float) -> np.ndarray:
-    # One fixed normalization per clip preserves changes through the rollout.
-    normalized = np.clip((array.astype(np.float32) - near) / (far - near), 0, 1)
-    stops = np.array([[15, 35, 57], [22, 112, 126], [79, 180, 146], [237, 216, 117], [251, 244, 211]], dtype=np.float32)
+    # A shared range and palette keep both methods directly comparable.
+    normalized = np.clip((far - array.astype(np.float32)) / (far - near), 0, 1)
+    stops = np.array([[20, 42, 56], [35, 87, 108], [78, 145, 148], [171, 197, 148], [247, 225, 153]], dtype=np.float32)
     positions = normalized * (len(stops) - 1)
     lower = np.floor(positions).astype(np.int32)
     upper = np.minimum(lower + 1, len(stops) - 1)
@@ -101,61 +81,65 @@ def depth_frames(array: np.ndarray, near: float, far: float) -> np.ndarray:
     return np.ascontiguousarray(color.astype(np.uint8))
 
 
+def render_paper_figures() -> None:
+    for name in ("intro_overview", "method_overview"):
+        subprocess.run(
+            ["pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-r", "144", "-png",
+             str(PAPER / "figures" / f"{name}.pdf"), str(MEDIA / name)],
+            check=True,
+        )
+    with Image.open(MEDIA / "intro_overview.png") as image:
+        for label, left, right in (("alignment", 0, 460), ("factorized", 460, 1001), ("generation", 1001, 1440)):
+            x0 = round(image.width * left / 1440)
+            x1 = round(image.width * right / 1440)
+            image.crop((x0, 0, x1, image.height)).save(MEDIA / f"intro-{label}.png", optimize=True)
+
+
 def main() -> None:
     MEDIA.mkdir(parents=True, exist_ok=True)
     DATA.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(PAPER / "figures" / "intro_overview.svg", MEDIA / "intro_overview.svg")
-    shutil.copyfile(PAPER / "figures" / "method_overview.svg", MEDIA / "method_overview.svg")
+    render_paper_figures()
     long_root = BASE / "combined" / "long100"
     scenes = {7: "living", 8: "kitchen", 16: "aerial"}
-    hero_parts = []
     for index, slug in scenes.items():
         gt, ours = load_pair(long_root / "Ours" / "raw", index)
         _, gf = load_pair(long_root / "GF" / "raw", index)
         for label, frames in (("upcast", ours), ("geometry-forcing", gf), ("reference", gt)):
             encode(frames, MEDIA / f"{slug}-{label}.mp4")
             save_frame(frames[40], MEDIA / f"{slug}-{label}.jpg")
-        hero_parts.append(ours)
+        if slug == "kitchen":
+            encode(ours, MEDIA / "hero.mp4", crf=22)
+            save_frame(ours[32], MEDIA / "hero.jpg", width=1536)
+            save_frame(gt[1], MEDIA / "method-frame-i.jpg", width=512)
+            save_frame(gt[40], MEDIA / "method-frame-j.jpg", width=512)
+            for point in (1, 15, 31, 47, 63):
+                save_frame(ours[point], MEDIA / f"timeline-{point + 1:02d}.jpg", width=512)
         print("scene", slug, flush=True)
-    hero = np.concatenate(hero_parts, axis=2)
-    encode(hero, MEDIA / "hero.mp4", crf=24)
-    save_frame(hero[32], MEDIA / "hero.jpg", width=1536)
 
-    # A complete camera-conditioned rollout for the long-horizon viewer.
-    horizon_files = {
-        "upcast": BASE / "generation/stress100/Ours/chunk_44_2/raw/1/data.npz",
-    }
-    for label, path in horizon_files.items():
-        with np.load(path) as archive:
-            frames = rgb_frames(archive["gen"])
-        encode(frames, MEDIA / f"horizon-{label}.mp4", crf=24)
-        for point in (1, 64, 128, 192, 255):
-            save_frame(frames[point], MEDIA / f"horizon-{label}-{point:03d}.jpg", width=512)
-        print("horizon", label, flush=True)
-
-    # Depth is the cached independent estimator output, not a decoded UPCAST state.
-    arkit_index = 25
-    _, ours = load_pair(ARKIT / "combined" / "Ours" / "raw", arkit_index)
-    _, gf = load_pair(ARKIT / "combined" / "GF" / "raw", arkit_index)
+    # Static, synchronized samples avoid distracting temporal estimator flicker.
+    arkit_index = 5
+    gt, ours = load_pair(ARKIT_PILOT / "combined" / "Ours" / "raw", arkit_index)
+    _, gf = load_pair(ARKIT_PILOT / "combined" / "GF" / "raw", arkit_index)
     geometry_sources = (("upcast", ours, "Ours"), ("geometry-forcing", gf, "GF"))
     depths = {}
     for label, _, source in geometry_sources:
-        depth_file = next((CACHE / source).glob(f"video_{arkit_index:05d}_*.npz"))
+        depth_file = next((PILOT_CACHE / source).glob(f"video_{arkit_index:05d}_*.npz"))
         with np.load(depth_file) as archive:
             depths[label] = archive["depth"].astype(np.float32)
     valid = np.concatenate([array[np.isfinite(array) & (array > 0)] for array in depths.values()])
-    near, far = np.percentile(valid, [3, 97])
+    near, far = np.percentile(valid, [2, 98])
+    points = (1, 8, 16, 24, 32, 40, 48, 56, 63)
     for label, frames, _ in geometry_sources:
-        encode(frames, MEDIA / f"geometry-{label}-rgb.mp4")
-        save_frame(frames[40], MEDIA / f"geometry-{label}-rgb.jpg")
         depth = depth_frames(depths[label], near, far)
-        encode(depth, MEDIA / f"geometry-{label}-depth.mp4")
-        save_frame(depth[40], MEDIA / f"geometry-{label}-depth.jpg")
+        for point in points:
+            save_frame(frames[point], MEDIA / f"geometry-{label}-rgb-{point + 1:02d}.jpg", width=512)
+            save_frame(depth[point], MEDIA / f"geometry-{label}-depth-{point + 1:02d}.jpg", width=512)
         print("geometry", label, flush=True)
+    for point in points:
+        save_frame(gt[point], MEDIA / f"geometry-reference-{point + 1:02d}.jpg", width=512)
 
     curves = {
         "short": {"frames": 64, "count": 100, "upcast": psnr_curve(long_root / "Ours" / "raw", 100), "geometryForcing": psnr_curve(long_root / "GF" / "raw", 100)},
-        "long": {"frames": 256, "count": 12, "upcast": stress_curve("Ours"), "geometryForcing": stress_curve("GF")},
     }
     (DATA / "curves.js").write_text("window.UPCAST_CURVES=" + json.dumps(curves, separators=(",", ":")) + ";\n")
     print("curves", flush=True)
