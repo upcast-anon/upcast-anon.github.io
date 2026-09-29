@@ -86,15 +86,24 @@ const ideaSteps = {
 };
 const ideaOrder = ['alignment', 'factorized', 'generation'];
 let ideaTimer = null;
+let ideaTourSeen = false;
+function setMotionPlayback(selector, playing) {
+  const canvas = $(selector);
+  if (!canvas) return;
+  canvas.classList.toggle('is-paused', !playing);
+  canvas.getAnimations({ subtree: true }).forEach((animation) => { if (playing) animation.play(); else animation.pause(); });
+}
 function stopIdeaTour() {
   clearInterval(ideaTimer);
   ideaTimer = null;
+  setMotionPlayback('#ideaPanelArt .motion-canvas', false);
   $('#ideaAuto').innerHTML = icon('play');
   $('#ideaAuto').setAttribute('aria-label', 'Play guided walkthrough');
   lucide.createIcons();
 }
 function activateIdea(button) {
   const step = ideaSteps[button.dataset.idea];
+  UpcastMotion.mountIdea(button.dataset.idea);
   $('#ideaPanelImage').src = `assets/media/${step.image}`;
   $('#ideaPanelImage').alt = step.alt;
   $('#ideaPanelNumber').textContent = step.number;
@@ -104,9 +113,11 @@ function activateIdea(button) {
   $('#ideaProgress').textContent = `${String(ideaOrder.indexOf(button.dataset.idea) + 1).padStart(2, '0')} / 03`;
   $$('[data-idea]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-selected', String(tab === button)); });
 }
-$$('[data-idea]').forEach((button) => button.addEventListener('click', () => { stopIdeaTour(); activateIdea(button); }));
-$('#ideaAuto').addEventListener('click', () => {
-  if (ideaTimer) { stopIdeaTour(); return; }
+$$('[data-idea]').forEach((button) => button.addEventListener('click', () => { ideaTourSeen = true; stopIdeaTour(); activateIdea(button); }));
+function startIdeaTour() {
+  if (ideaTimer) return;
+  if ($('[data-idea="generation"]').classList.contains('active')) activateIdea($('[data-idea="alignment"]'));
+  setMotionPlayback('#ideaPanelArt .motion-canvas', true);
   $('#ideaAuto').innerHTML = icon('pause');
   $('#ideaAuto').setAttribute('aria-label', 'Pause guided walkthrough');
   lucide.createIcons();
@@ -114,8 +125,25 @@ $('#ideaAuto').addEventListener('click', () => {
     const current = ideaOrder.findIndex((key) => $(`[data-idea="${key}"]`).classList.contains('active'));
     if (current === ideaOrder.length - 1) { stopIdeaTour(); return; }
     activateIdea($(`[data-idea="${ideaOrder[current + 1]}"]`));
-  }, 3800);
+  }, 5500);
+}
+$('#ideaAuto').addEventListener('click', () => {
+  ideaTourSeen = true;
+  if (ideaTimer) stopIdeaTour();
+  else startIdeaTour();
 });
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const ideaObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !ideaTourSeen) {
+      ideaTourSeen = true;
+      activateIdea($('[data-idea="alignment"]'));
+      startIdeaTour();
+    } else if (!entries[0].isIntersecting && ideaTimer) stopIdeaTour();
+  }, { threshold: .28 });
+  ideaObserver.observe($('#ideaPanel'));
+} else {
+  UpcastMotion.mountIdea('alignment');
+}
 
 const compareVideos = [$('#compareRef'), $('#compareOurs'), $('#compareGF')];
 const compare = player({ videos: compareVideos, playButton: $('#comparePlay'), seek: $('#compareSeek'), counter: $('#compareFrame'), frames: 64 });
@@ -140,10 +168,54 @@ $$('.scene-pick').forEach((button) => button.addEventListener('click', () => {
   $('#compareSeek').value = 0;
   $('#compareFrame').textContent = 'FRAME 01 / 64';
 }));
-$$('[data-method]').forEach((button) => button.addEventListener('click', () => {
+const methodOrder = ['acquire', 'transfer', 'deploy'];
+let methodTimer = null;
+let methodTourSeen = false;
+function stopMethodTour() {
+  clearInterval(methodTimer);
+  methodTimer = null;
+  setMotionPlayback('[data-method-panel]:not([hidden]) .motion-canvas', false);
+  $('#methodAuto').innerHTML = icon('play');
+  $('#methodAuto').setAttribute('aria-label', 'Play method walkthrough');
+  lucide.createIcons();
+}
+function activateMethod(button) {
   $$('[data-method]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-selected', String(tab === button)); });
   $$('[data-method-panel]').forEach((panel) => { panel.hidden = panel.dataset.methodPanel !== button.dataset.method; });
-}));
+  $('#methodProgress').textContent = `${String(methodOrder.indexOf(button.dataset.method) + 1).padStart(2, '0')} / 03`;
+  UpcastMotion.mountMethod(button.dataset.method);
+}
+function startMethodTour() {
+  if (methodTimer) return;
+  if ($('[data-method="deploy"]').classList.contains('active')) activateMethod($('[data-method="acquire"]'));
+  setMotionPlayback('[data-method-panel]:not([hidden]) .motion-canvas', true);
+  $('#methodAuto').innerHTML = icon('pause');
+  $('#methodAuto').setAttribute('aria-label', 'Pause method walkthrough');
+  lucide.createIcons();
+  methodTimer = setInterval(() => {
+    const current = methodOrder.findIndex((key) => $(`[data-method="${key}"]`).classList.contains('active'));
+    if (current === methodOrder.length - 1) { stopMethodTour(); return; }
+    activateMethod($(`[data-method="${methodOrder[current + 1]}"]`));
+  }, 5500);
+}
+$$('[data-method]').forEach((button) => button.addEventListener('click', () => { methodTourSeen = true; stopMethodTour(); activateMethod(button); }));
+$('#methodAuto').addEventListener('click', () => {
+  methodTourSeen = true;
+  if (methodTimer) stopMethodTour();
+  else startMethodTour();
+});
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const methodObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !methodTourSeen) {
+      methodTourSeen = true;
+      activateMethod($('[data-method="acquire"]'));
+      startMethodTour();
+    } else if (!entries[0].isIntersecting && methodTimer) stopMethodTour();
+  }, { threshold: .22 });
+  methodObserver.observe($('#methodStage'));
+} else {
+  UpcastMotion.mountMethod('acquire');
+}
 const featureExplanations = {
   page: 'PAGE-4D provides geometry features and point maps that anchor the shared physical vocabulary.',
   dino: 'DINOv2 supplies patch-level visual structure to the continuous appearance path and the visual reconstruction target.',
@@ -153,6 +225,31 @@ $$('[data-feature]').forEach((button) => button.addEventListener('click', () => 
   $('#featureExplain').textContent = featureExplanations[button.dataset.feature];
   $$('[data-feature]').forEach((item) => { item.classList.toggle('active', item === button); item.setAttribute('aria-pressed', String(item === button)); });
 }));
+
+const stageMetrics = {
+  fvd: { name: 'FVD', values: [869.8, 674.4, 708.9, 707.5], digits: 1, note: 'Unified-space learning improves FVD; the backbone-only handoff retains most of that gain.' },
+  jedi: { name: 'JEDi', values: [7.88, 6.59, 6.05, 5.90], digits: 2, note: 'JEDi improves at each stage, including after backbone consolidation and generated-history refinement.' },
+  psnr: { name: 'PSNR', values: [13.78, 14.22, 14.29, 14.30], digits: 2, note: 'PSNR rises with unified-space learning and remains improved after the auxiliary branches are removed.' }
+};
+const stageNames = [['Video', 'backbone'], ['Unified-space', 'learning'], ['Backbone', 'consolidation'], ['Rollout', 'refinement']];
+function renderStagePlot(metric) {
+  const { name, values, digits, note } = stageMetrics[metric];
+  const low = Math.min(...values);
+  const high = Math.max(...values);
+  const margin = (high - low) * .18;
+  const min = low - margin;
+  const max = high + margin;
+  const xs = [105, 365, 625, 885];
+  const ys = values.map((value) => 33 + (max - value) / (max - min) * 143);
+  const points = xs.map((x, index) => `${x},${ys[index].toFixed(1)}`).join(' ');
+  const guides = [33, 104.5, 176].map((y, index) => `<line x1="76" y1="${y}" x2="920" y2="${y}" class="stage-guide"/><text x="63" y="${y + 4}" text-anchor="end" class="stage-axis">${(max - (max - min) * index / 2).toFixed(digits)}</text>`).join('');
+  $('#stagePlot').innerHTML = `${guides}<polyline class="stage-plot-line" points="${points}" fill="none"/>${xs.map((x, index) => `<g class="stage-point" style="--stage-delay:${(.2 + index * .22).toFixed(2)}s"><circle cx="${x}" cy="${ys[index].toFixed(1)}" r="6"/><text x="${x}" y="${Math.max(20, ys[index] - 17).toFixed(1)}" class="stage-value" text-anchor="middle">${values[index].toFixed(digits)}</text><text x="${x}" y="211" class="stage-name" text-anchor="middle">${stageNames[index][0]}<tspan x="${x}" dy="18">${stageNames[index][1]}</tspan></text></g>`).join('')}`;
+  $('#stagePlot').setAttribute('aria-label', `${name} across four training stages: ${values.map((value) => value.toFixed(digits)).join(', ')}`);
+  $('#stagePlotNote').textContent = note;
+  $$('[data-stage-metric]').forEach((button) => { button.classList.toggle('active', button.dataset.stageMetric === metric); button.setAttribute('aria-pressed', String(button.dataset.stageMetric === metric)); });
+}
+$$('[data-stage-metric]').forEach((button) => button.addEventListener('click', () => renderStagePlot(button.dataset.stageMetric)));
+renderStagePlot('fvd');
 
 const geometryFrames = [2, 9, 17, 25, 33, 41, 49, 57, 64];
 const geometryCompare = $('#geometryCompare');

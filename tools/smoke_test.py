@@ -36,6 +36,8 @@ def test_page(browser, width: int, height: int) -> None:
 
     for step in ('alignment', 'factorized', 'generation'):
         page.locator(f'[data-idea="{step}"]').click()
+        assert page.locator('#ideaPanelArt .motion-svg').count() == 1
+        assert page.locator('#ideaPanelArt .motion-trace').count() >= 2
         page.wait_for_function("document.querySelector('#ideaPanelImage').complete && document.querySelector('#ideaPanelImage').naturalWidth > 0")
         assert page.locator('#ideaPanelImage').evaluate(
             'e => e.getBoundingClientRect().bottom <= e.parentElement.getBoundingClientRect().bottom + 1'
@@ -45,6 +47,14 @@ def test_page(browser, width: int, height: int) -> None:
     page.locator('#ideaAuto').click()
     assert page.locator('#ideaAuto').get_attribute('aria-label') == 'Pause guided walkthrough'
     page.locator('#ideaAuto').click()
+    assert page.locator('#ideaPanelArt .motion-canvas').evaluate(
+        "e => e.getAnimations({subtree:true}).some(a => a.playState === 'paused')"
+    )
+    if width <= 560:
+        page.locator('#ideaPanelArt .motion-pan-nav button').nth(1).click()
+        page.wait_for_timeout(400)
+        assert page.locator('#ideaPanelArt .motion-viewport').evaluate('e => e.scrollLeft') > 0
+        page.locator('#ideaPanelArt .motion-pan-nav button').first.click()
     assert page.locator('.full-paper-figure img').count() == 2
     page.locator('[data-scene="entryway"]').click()
     assert "entryway-upcast.mp4" in page.locator("#compareOurs source").get_attribute("src")
@@ -59,11 +69,20 @@ def test_page(browser, width: int, height: int) -> None:
 
     page.locator('[data-method="transfer"]').click()
     assert page.locator('[data-method-panel="transfer"]').is_visible()
+    assert page.locator('[data-method-panel="transfer"] .motion-svg').count() == 1
     page.locator('[data-method="deploy"]').click()
     assert page.locator('[data-method-panel="deploy"]').is_visible()
     page.locator('[data-method="acquire"]').click()
+    page.locator('#methodAuto').click()
+    assert page.locator('#methodAuto').get_attribute('aria-label') == 'Pause method walkthrough'
+    page.locator('#methodAuto').click()
     page.locator('[data-feature="vjepa"]').click()
     assert "regularizer" in page.locator("#featureExplain").inner_text()
+    page.locator('[data-stage-metric="jedi"]').click()
+    assert '5.90' in page.locator('#stagePlot').text_content()
+    page.locator('[data-stage-metric="psnr"]').click()
+    assert '14.30' in page.locator('#stagePlot').text_content()
+    page.locator('[data-stage-metric="fvd"]').click()
     page.locator('[data-geo-view="depth"]').click()
     assert "geometry-hallway-upcast-depth-17.jpg" in page.locator("#geoOurs").get_attribute("src")
     assert "reference-rgb-17.jpg" in page.locator("#geoReference").get_attribute("src")
@@ -127,4 +146,13 @@ if __name__ == "__main__":
         for viewport in ((320, 700), (390, 844), (768, 1024), (1440, 900), (1920, 1080)):
             test_page(browser, *viewport)
             print(f"OK {viewport[0]}x{viewport[1]}")
+        reduced = browser.new_page(reduced_motion="reduce")
+        reduced.goto(URL, wait_until="load")
+        assert reduced.locator('#ideaPanelArt .motion-svg').count() == 1
+        assert reduced.locator('[data-method-panel="acquire"] .motion-svg').count() == 1
+        assert reduced.locator('#ideaPanelArt .motion-rise').first.evaluate(
+            "e => getComputedStyle(e).opacity === '1'"
+        )
+        reduced.close()
+        print("OK reduced motion")
         browser.close()
