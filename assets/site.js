@@ -36,6 +36,7 @@ function setSource(video, source, poster) {
   video.pause();
   video.poster = poster;
   video.querySelector('source').src = source;
+  video.addEventListener('loadedmetadata', () => { video.currentTime = 0; }, { once: true });
   video.load();
 }
 
@@ -83,7 +84,16 @@ const ideaSteps = {
   factorized: { image: 'intro-factorized.png', alt: 'A shared physical codebook and a private appearance path form a coupled visual state.', number: '02 / THE TRANSITION', title: 'Share the structure. Keep the detail.', text: 'A geometry-anchored codebook organizes physical changes across representations; a continuous appearance path carries complementary visual change. Coupling lets both inform visual prediction.', key: 'Q: shared physical · A: private appearance · U: coupled visual' },
   generation: { image: 'intro-generation.png', alt: 'The trained DFoT backbone rolls out RGB video without auxiliary modules.', number: '03 / THE DEPLOYMENT', title: 'The video model stands on its own.', text: 'Training-time representations improve the original backbone. At inference, the model takes an input frame and controls and rolls out RGB video without the auxiliary pathways.', key: 'Training-time knowledge · backbone-only inference' }
 };
-$$('[data-idea]').forEach((button) => button.addEventListener('click', () => {
+const ideaOrder = ['alignment', 'factorized', 'generation'];
+let ideaTimer = null;
+function stopIdeaTour() {
+  clearInterval(ideaTimer);
+  ideaTimer = null;
+  $('#ideaAuto').innerHTML = icon('play');
+  $('#ideaAuto').setAttribute('aria-label', 'Play guided walkthrough');
+  lucide.createIcons();
+}
+function activateIdea(button) {
   const step = ideaSteps[button.dataset.idea];
   $('#ideaPanelImage').src = `assets/media/${step.image}`;
   $('#ideaPanelImage').alt = step.alt;
@@ -91,8 +101,21 @@ $$('[data-idea]').forEach((button) => button.addEventListener('click', () => {
   $('#ideaPanelTitle').textContent = step.title;
   $('#ideaPanelText').textContent = step.text;
   $('#ideaPanelKey').textContent = step.key;
+  $('#ideaProgress').textContent = `${String(ideaOrder.indexOf(button.dataset.idea) + 1).padStart(2, '0')} / 03`;
   $$('[data-idea]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-selected', String(tab === button)); });
-}));
+}
+$$('[data-idea]').forEach((button) => button.addEventListener('click', () => { stopIdeaTour(); activateIdea(button); }));
+$('#ideaAuto').addEventListener('click', () => {
+  if (ideaTimer) { stopIdeaTour(); return; }
+  $('#ideaAuto').innerHTML = icon('pause');
+  $('#ideaAuto').setAttribute('aria-label', 'Pause guided walkthrough');
+  lucide.createIcons();
+  ideaTimer = setInterval(() => {
+    const current = ideaOrder.findIndex((key) => $(`[data-idea="${key}"]`).classList.contains('active'));
+    if (current === ideaOrder.length - 1) { stopIdeaTour(); return; }
+    activateIdea($(`[data-idea="${ideaOrder[current + 1]}"]`));
+  }, 3800);
+});
 
 const compareVideos = [$('#compareRef'), $('#compareOurs'), $('#compareGF')];
 const compare = player({ videos: compareVideos, playButton: $('#comparePlay'), seek: $('#compareSeek'), counter: $('#compareFrame'), frames: 64 });
@@ -110,14 +133,12 @@ $$('[data-video-scrub]').forEach((frame) => {
 const roleNames = ['reference', 'upcast', 'geometry-forcing'];
 $$('.scene-pick').forEach((button) => button.addEventListener('click', () => {
   if (button.classList.contains('active')) return;
-  const wasPlaying = compare.playing;
   compare.setPlaying(false);
   $$('.scene-pick').forEach((item) => { item.classList.toggle('active', item === button); item.setAttribute('aria-pressed', String(item === button)); });
   const scene = button.dataset.scene;
   compareVideos.forEach((video, index) => setSource(video, `assets/media/${scene}-${roleNames[index]}.mp4`, `assets/media/${scene}-${roleNames[index]}.jpg`));
   $('#compareSeek').value = 0;
   $('#compareFrame').textContent = 'FRAME 01 / 64';
-  if (wasPlaying) compareVideos[0].addEventListener('loadedmetadata', () => compare.setPlaying(true), { once: true });
 }));
 $$('[data-method]').forEach((button) => button.addEventListener('click', () => {
   $$('[data-method]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-selected', String(tab === button)); });
@@ -136,21 +157,39 @@ $$('[data-feature]').forEach((button) => button.addEventListener('click', () => 
 const geometryFrames = [2, 9, 17, 25, 33, 41, 49, 57, 64];
 const geometryCompare = $('#geometryCompare');
 const geoHandle = $('#geoHandle');
-let geometryView = 'rgb';
+let geometryView = 'error';
+let geometryScene = 'hallway';
+const geometryScenes = {
+  hallway: { title: 'Tiled doorway', note: 'The floor and door boundaries retain more of the sensor-referenced layout.' },
+  poster: { title: 'Floor poster', note: 'The poster outline and surrounding floor plane provide a compact test of the reconstructed surface.' }
+};
 function updateGeometryFrame() {
   const frame = geometryFrames[Number($('#geoFrameRange').value)];
   const name = String(frame).padStart(2, '0');
   $('#geoFrameLabel').textContent = `FRAME ${name} / 64`;
-  $('#geoOurs').src = `assets/media/geometry-upcast-${geometryView}-${name}.jpg`;
-  $('#geoGF').src = `assets/media/geometry-geometry-forcing-${geometryView}-${name}.jpg`;
+  $('#geoOurs').src = `assets/media/geometry-${geometryScene}-upcast-${geometryView}-${name}.jpg`;
+  $('#geoGF').src = `assets/media/geometry-${geometryScene}-geometry-forcing-${geometryView}-${name}.jpg`;
   $('#geoOursFull').src = $('#geoOurs').src;
   $('#geoGFFull').src = $('#geoGF').src;
-  $('#geoReference').src = `assets/media/geometry-reference-${name}.jpg`;
-  $('#geoReference').alt = `Reference ARKitScenes frame ${frame}`;
+  $('#geoReference').src = `assets/media/geometry-${geometryScene}-reference-rgb-${name}.jpg`;
+  $('#geoReference').alt = `Reference RGB at frame ${frame}`;
+  $('#geoSensor').src = `assets/media/geometry-${geometryScene}-reference-depth-${name}.jpg`;
+  $('#geoSensor').alt = `Sensor depth at frame ${frame}`;
   $('#geoOursFull').alt = `Complete UPCAST ${geometryView} frame ${frame}`;
   $('#geoGFFull').alt = `Complete Geometry Forcing ${geometryView} frame ${frame}`;
+  $('#depthLegend').hidden = geometryView !== 'error';
 }
 $('#geoFrameRange').addEventListener('input', updateGeometryFrame);
+$$('[data-geo-scene]').forEach((button) => button.addEventListener('click', () => {
+  geometryScene = button.dataset.geoScene;
+  $$('[data-geo-scene]').forEach((item) => { item.classList.toggle('active', item === button); item.setAttribute('aria-pressed', String(item === button)); });
+  $('#geoSceneTitle').textContent = geometryScenes[geometryScene].title;
+  $('#geoSceneNote').textContent = `${geometryScenes[geometryScene].note} Values compare UPCAST / Geometry Forcing on this clip.`;
+  const data = window.UPCAST_GEOMETRY[geometryScene];
+  $('#geoSceneAbsRel').innerHTML = `${data.upcast.absRel.toFixed(3)} <em>/ ${data['geometry-forcing'].absRel.toFixed(3)}</em>`;
+  $('#geoSceneFscore').innerHTML = `${data.upcast.fscore.toFixed(3)} <em>/ ${data['geometry-forcing'].fscore.toFixed(3)}</em>`;
+  updateGeometryFrame();
+}));
 $$('[data-geo-view]').forEach((button) => button.addEventListener('click', () => {
   geometryView = button.dataset.geoView;
   $$('[data-geo-view]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-pressed', String(tab === button)); });
@@ -228,6 +267,52 @@ function drawChart() {
 chartData = window.UPCAST_CURVES;
 if (chartData) drawChart();
 else chart.outerHTML = '<p>Chart data unavailable.</p>';
+
+const horizonResults = {
+  64: [
+    ['DFoT', '654.0', '69.46', '0.440', '0.474', '13.64', '5.65', '0.176'],
+    ['REPA', '643.6', '69.42', '0.457', '0.463', '13.33', '6.77', '0.283'],
+    ['VideoREPA', '795.4', '76.09', '0.485', '0.410', '11.48', '9.98', '0.282'],
+    ['Geometry Forcing', '534.9', '65.15', '0.391', '0.522', '12.44', '4.40', '0.192'],
+    ['UPCAST', '497.8', '61.26', '0.396', '0.498', '13.94', '3.88', '0.161']
+  ],
+  128: [
+    ['DFoT', '1136.3', '153.9', '0.608', '0.362', '10.91', '–', '–'],
+    ['REPA', '1258.5', '162.2', '0.632', '0.312', '10.31', '–', '–'],
+    ['VideoREPA', '1068.1', '142.9', '0.619', '0.290', '9.75', '–', '–'],
+    ['Geometry Forcing', '924.7', '128.1', '0.549', '0.408', '9.13', '–', '–'],
+    ['UPCAST', '803.6', '136.5', '0.541', '0.390', '11.28', '–', '–']
+  ],
+  256: [
+    ['DFoT', '1711.5', '214.0', '0.717', '0.298', '9.32', '18.88', '–'],
+    ['REPA', '2065.9', '220.0', '0.750', '0.238', '8.77', '32.68', '–'],
+    ['VideoREPA', '1378.0', '201.7', '0.705', '0.237', '8.88', '16.22', '–'],
+    ['Geometry Forcing', '1221.7', '175.1', '0.643', '0.373', '7.73', '15.45', '–'],
+    ['UPCAST', '1217.6', '189.7', '0.664', '0.340', '9.59', '12.83', '–']
+  ]
+};
+function showHorizon(horizon) {
+  const rows = horizonResults[horizon];
+  const tbody = $('#horizonTable tbody');
+  tbody.replaceChildren();
+  rows.forEach(([method, ...values]) => {
+    const row = document.createElement('tr');
+    if (method === 'UPCAST') row.className = 'ours-row';
+    const name = document.createElement('th');
+    name.scope = 'row';
+    name.textContent = method;
+    row.append(name);
+    values.forEach((value) => { const cell = document.createElement('td'); cell.textContent = value; row.append(cell); });
+    tbody.append(row);
+  });
+  $('#horizonCaption').textContent = `${horizon}-frame rollouts · ${horizon === '64' ? '100' : '12'} matched videos`;
+  $('#horizonNote').textContent = horizon === '64'
+    ? 'RPE uses the first 12 primary-test videos; other columns use all 100.'
+    : 'Separate 12-video stress cohort. Dashes indicate unreported metrics; these horizons characterize extrapolation beyond 16-frame training clips.';
+  $$('[data-horizon]').forEach((button) => { const active = button.dataset.horizon === String(horizon); button.classList.toggle('active', active); button.setAttribute('aria-selected', String(active)); });
+}
+$$('[data-horizon]').forEach((button) => button.addEventListener('click', () => showHorizon(button.dataset.horizon)));
+showHorizon(64);
 
 const dialog = $('#figureDialog');
 $$('[data-figure]').forEach((button) => button.addEventListener('click', () => {

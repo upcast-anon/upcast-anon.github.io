@@ -81,6 +81,18 @@ def depth_frames(array: np.ndarray, near: float, far: float) -> np.ndarray:
     return np.ascontiguousarray(color.astype(np.uint8))
 
 
+def error_frames(prediction: np.ndarray, reference: np.ndarray, valid: np.ndarray) -> np.ndarray:
+    relative = np.abs(prediction - reference) / np.maximum(reference, 0.1)
+    normalized = np.clip(relative / 0.5, 0, 1)
+    stops = np.array([[235, 247, 244], [116, 191, 174], [249, 204, 109], [211, 83, 72]], dtype=np.float32)
+    position = normalized * (len(stops) - 1)
+    lower = np.floor(position).astype(np.int32)
+    upper = np.minimum(lower + 1, len(stops) - 1)
+    color = stops[lower] * (1 - (position - lower))[..., None] + stops[upper] * (position - lower)[..., None]
+    color[~valid] = [35, 48, 53]
+    return np.ascontiguousarray(color.astype(np.uint8))
+
+
 def render_paper_figures() -> None:
     for name in ("intro_overview", "method_overview"):
         subprocess.run(
@@ -100,16 +112,16 @@ def main() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
     render_paper_figures()
     long_root = BASE / "combined" / "long100"
-    scenes = {7: "living", 8: "kitchen", 16: "aerial"}
+    scenes = {0: "bathroom", 80: "stairwell", 90: "entryway"}
     for index, slug in scenes.items():
         gt, ours = load_pair(long_root / "Ours" / "raw", index)
         _, gf = load_pair(long_root / "GF" / "raw", index)
         for label, frames in (("upcast", ours), ("geometry-forcing", gf), ("reference", gt)):
             encode(frames, MEDIA / f"{slug}-{label}.mp4")
-            save_frame(frames[40], MEDIA / f"{slug}-{label}.jpg")
-        if slug == "kitchen":
+            save_frame(frames[0], MEDIA / f"{slug}-{label}.jpg")
+        if slug == "stairwell":
             encode(ours, MEDIA / "hero.mp4", crf=22)
-            save_frame(ours[32], MEDIA / "hero.jpg", width=1536)
+            save_frame(ours[0], MEDIA / "hero.jpg", width=1536)
             save_frame(gt[1], MEDIA / "method-frame-i.jpg", width=512)
             save_frame(gt[40], MEDIA / "method-frame-j.jpg", width=512)
             for point in (1, 15, 31, 47, 63):
@@ -117,26 +129,47 @@ def main() -> None:
         print("scene", slug, flush=True)
 
     # Static, synchronized samples avoid distracting temporal estimator flicker.
-    arkit_index = 5
-    gt, ours = load_pair(ARKIT_PILOT / "combined" / "Ours" / "raw", arkit_index)
-    _, gf = load_pair(ARKIT_PILOT / "combined" / "GF" / "raw", arkit_index)
-    geometry_sources = (("upcast", ours, "Ours"), ("geometry-forcing", gf, "GF"))
-    depths = {}
-    for label, _, source in geometry_sources:
-        depth_file = next((PILOT_CACHE / source).glob(f"video_{arkit_index:05d}_*.npz"))
-        with np.load(depth_file) as archive:
-            depths[label] = archive["depth"].astype(np.float32)
-    valid = np.concatenate([array[np.isfinite(array) & (array > 0)] for array in depths.values()])
-    near, far = np.percentile(valid, [2, 98])
+    manifest = json.loads((Path('/mnt/exdata/GeometryForcing/data/arkitscenes-pilot/pilot_manifest.json')).read_text())
+    report = json.loads((ARKIT_PILOT / 'geometry/metric_depth/metric_depth_report.json').read_text())
+    by_clip = {(row['index'], row['source']): row for row in report['per_clip']}
     points = (1, 8, 16, 24, 32, 40, 48, 56, 63)
-    for label, frames, _ in geometry_sources:
-        depth = depth_frames(depths[label], near, far)
+    scene_metrics = {}
+    for arkit_index, slug in ((0, 'poster'), (7, 'hallway')):
+        gt, ours = load_pair(ARKIT_PILOT / 'combined/Ours/raw', arkit_index)
+        _, gf = load_pair(ARKIT_PILOT / 'combined/GF/raw', arkit_index)
+        clip_id = manifest['clips'][arkit_index]['clip_id']
+        with np.load(Path('/mnt/exdata/GeometryForcing/data/arkitscenes-pilot/test') / f'{clip_id}.npz') as archive:
+            sensor = archive['depth_m'].astype(np.float32)
+            sensor_valid = archive['depth_valid'].astype(bool) & np.isfinite(sensor) & (sensor > 0)
+        geometry_sources = (("upcast", ours, "Ours"), ("geometry-forcing", gf, "GF"))
+        depths = {}
+        for label, _, source in geometry_sources:
+            depth_file = next((PILOT_CACHE / source).glob(f'video_{arkit_index:05d}_*.npz'))
+            with np.load(depth_file) as archive:
+                depths[label] = archive['depth'].astype(np.float32) * by_clip[arkit_index, source]['clip_scale']
+        all_valid = np.concatenate([sensor[sensor_valid], *(array[np.isfinite(array) & (array > 0)] for array in depths.values())])
+        near, far = np.percentile(all_valid, [2, 98])
+        scene_metrics[slug] = {
+            label: {'absRel': round(by_clip[arkit_index, source]['aligned_abs_rel'], 3),
+                    'fscore': round(by_clip[arkit_index, source]['point_fscore_10cm'], 3),
+                    'chamfer': round(by_clip[arkit_index, source]['point_chamfer_l1_m'], 3)}
+            for label, _, source in geometry_sources
+        }
+        for label, frames, _ in geometry_sources:
+            colored_depth = depth_frames(depths[label], near, far)
+            colored_error = error_frames(depths[label], sensor, sensor_valid)
+            for point in points:
+                stem = f'geometry-{slug}-{label}'
+                save_frame(frames[point], MEDIA / f'{stem}-rgb-{point + 1:02d}.jpg', width=512)
+                save_frame(colored_depth[point], MEDIA / f'{stem}-depth-{point + 1:02d}.jpg', width=512)
+                save_frame(colored_error[point], MEDIA / f'{stem}-error-{point + 1:02d}.jpg', width=512)
+        sensor_color = depth_frames(sensor, near, far)
         for point in points:
-            save_frame(frames[point], MEDIA / f"geometry-{label}-rgb-{point + 1:02d}.jpg", width=512)
-            save_frame(depth[point], MEDIA / f"geometry-{label}-depth-{point + 1:02d}.jpg", width=512)
-        print("geometry", label, flush=True)
-    for point in points:
-        save_frame(gt[point], MEDIA / f"geometry-reference-{point + 1:02d}.jpg", width=512)
+            save_frame(gt[point], MEDIA / f'geometry-{slug}-reference-rgb-{point + 1:02d}.jpg', width=512)
+            save_frame(sensor_color[point], MEDIA / f'geometry-{slug}-reference-depth-{point + 1:02d}.jpg', width=512)
+        print('geometry', slug, flush=True)
+
+    (DATA / 'geometry.js').write_text('window.UPCAST_GEOMETRY=' + json.dumps(scene_metrics, separators=(',', ':')) + ';\n')
 
     curves = {
         "short": {"frames": 64, "count": 100, "upcast": psnr_curve(long_root / "Ours" / "raw", 100), "geometryForcing": psnr_curve(long_root / "GF" / "raw", 100)},

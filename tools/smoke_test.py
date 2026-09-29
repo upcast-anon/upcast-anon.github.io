@@ -21,10 +21,11 @@ def test_page(browser, width: int, height: int) -> None:
     assert page.title() == "UPCAST | Factorized World Transitions"
     assert page.locator('a[href$="paper.pdf"]').count() == 0
     assert page.locator("#driftChart path").count() == 2
-    assert page.locator("#horizonOurs").count() == 0
+    assert page.locator("#horizonTable tbody tr").count() == 5
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), f"horizontal overflow at {width}px"
+    assert page.locator('#compareOurs').evaluate('e => e.currentTime') < .5
 
-    if width > 760:
+    if width > 860:
         page.screenshot(path="/tmp/upcast-final-desktop-hero.png")
     else:
         page.locator("#menuToggle").click()
@@ -33,10 +34,22 @@ def test_page(browser, width: int, height: int) -> None:
         assert not page.locator("#mobileNav").is_visible()
         page.screenshot(path="/tmp/upcast-final-mobile-hero.png")
 
+    for step in ('alignment', 'factorized', 'generation'):
+        page.locator(f'[data-idea="{step}"]').click()
+        page.wait_for_function("document.querySelector('#ideaPanelImage').complete && document.querySelector('#ideaPanelImage').naturalWidth > 0")
+        assert page.locator('#ideaPanelImage').evaluate(
+            'e => e.getBoundingClientRect().bottom <= e.parentElement.getBoundingClientRect().bottom + 1'
+        ), f'guided figure clipped at {width}px: {step}'
     page.locator('[data-idea="factorized"]').click()
     assert "intro-factorized.png" in page.locator("#ideaPanelImage").get_attribute("src")
-    page.locator('[data-scene="living"]').click()
-    assert "living-upcast.mp4" in page.locator("#compareOurs source").get_attribute("src")
+    page.locator('#ideaAuto').click()
+    assert page.locator('#ideaAuto').get_attribute('aria-label') == 'Pause guided walkthrough'
+    page.locator('#ideaAuto').click()
+    assert page.locator('.full-paper-figure img').count() == 2
+    page.locator('[data-scene="entryway"]').click()
+    assert "entryway-upcast.mp4" in page.locator("#compareOurs source").get_attribute("src")
+    page.wait_for_function("document.querySelector('#compareOurs').readyState >= 1")
+    assert page.locator('#compareOurs').evaluate('e => e.currentTime') < .5
     page.locator("#comparePlay").click()
     page.wait_for_timeout(500)
     assert page.locator("#compareOurs").evaluate("e => e.videoWidth") == 256
@@ -52,12 +65,21 @@ def test_page(browser, width: int, height: int) -> None:
     page.locator('[data-feature="vjepa"]').click()
     assert "regularizer" in page.locator("#featureExplain").inner_text()
     page.locator('[data-geo-view="depth"]').click()
-    assert "geometry-upcast-depth-17.jpg" in page.locator("#geoOurs").get_attribute("src")
-    assert "geometry-upcast-depth-17.jpg" in page.locator("#geoOursFull").get_attribute("src")
+    assert "geometry-hallway-upcast-depth-17.jpg" in page.locator("#geoOurs").get_attribute("src")
+    assert "reference-rgb-17.jpg" in page.locator("#geoReference").get_attribute("src")
+    assert "reference-depth-17.jpg" in page.locator("#geoSensor").get_attribute("src")
+    page.locator('[data-geo-view="error"]').click()
+    assert "geometry-hallway-upcast-error-17.jpg" in page.locator("#geoOurs").get_attribute("src")
+    assert page.locator('#depthLegend').is_visible()
+    page.locator('[data-geo-scene="poster"]').click()
+    assert "geometry-poster-upcast-error-17.jpg" in page.locator("#geoOurs").get_attribute("src")
+    assert "0.149" in page.locator('#geoSceneAbsRel').inner_text()
     page.locator("#geoFrameRange").evaluate("e => { e.value = 8; e.dispatchEvent(new Event('input', {bubbles:true})); }")
-    assert "geometry-upcast-depth-64.jpg" in page.locator("#geoOurs").get_attribute("src")
-    assert "geometry-geometry-forcing-depth-64.jpg" in page.locator("#geoGFFull").get_attribute("src")
-    assert "geometry-reference-64.jpg" in page.locator("#geoReference").get_attribute("src")
+    assert "geometry-poster-upcast-error-64.jpg" in page.locator("#geoOurs").get_attribute("src")
+    assert "geometry-poster-geometry-forcing-error-64.jpg" in page.locator("#geoGFFull").get_attribute("src")
+    assert "geometry-poster-reference-rgb-64.jpg" in page.locator("#geoReference").get_attribute("src")
+    assert "geometry-poster-reference-depth-64.jpg" in page.locator("#geoSensor").get_attribute("src")
+    assert page.locator('.geometry-views figure').count() == 4
     page.locator("#geometryCompare").scroll_into_view_if_needed()
     bounds = page.locator("#geometryCompare").bounding_box()
     page.mouse.move(bounds["x"] + bounds["width"] * .7, bounds["y"] + bounds["height"] * .5)
@@ -70,23 +92,27 @@ def test_page(browser, width: int, height: int) -> None:
     assert page.locator("#driftChart path").count() == 2
 
     page.locator("#method").scroll_into_view_if_needed()
-    page.locator(".method-paper summary").click()
-    page.locator(".method-paper img").first.scroll_into_view_if_needed()
-    page.wait_for_function("document.querySelector('.method-paper img').complete && document.querySelector('.method-paper img').naturalWidth > 0")
-    assert page.locator(".method-paper img").first.evaluate("e => e.complete && e.naturalWidth > 0")
-    page.locator(".method-paper [data-figure]").click()
+    page.locator(".method-full img").first.scroll_into_view_if_needed()
+    page.wait_for_function("document.querySelector('.method-full img').complete && document.querySelector('.method-full img').naturalWidth > 0")
+    assert page.locator(".method-full img").first.evaluate("e => e.complete && e.naturalWidth > 0")
+    page.locator(".method-full [data-figure]").click()
     assert page.locator("#figureDialog").is_visible()
     page.locator("#figureClose").click()
     assert not page.locator("#figureDialog").is_visible()
 
-    for selector, filename in (("#idea", "idea"), ("#explore", "explore"), ("#temporal", "temporal"), ("#method", "method"), ("#geometry", "geometry"), ("#results", "results")):
+    page.locator('[data-horizon="256"]').click()
+    assert '1217.6' in page.locator('#horizonTable').inner_text()
+    page.locator('[data-horizon="64"]').click()
+    page.locator('.complete-metrics summary').first.click()
+    assert '29.13' in page.locator('.complete-metrics').first.inner_text()
+    page.locator('.action-metrics summary').click()
+    assert '89.78%' in page.locator('.action-metrics').inner_text()
+    for selector, filename in (("#idea", "idea"), ("#explore", "explore"), ("#temporal", "temporal"), ("#method", "method"), ("#geometry", "geometry"), ("#results", "results"), ("#evidence", "evidence"), ("#resources", "resources")):
         page.locator(selector).scroll_into_view_if_needed()
         page.wait_for_timeout(150)
         page.screenshot(path=f"/tmp/upcast-final-{width}-{filename}.png")
 
-    assert page.locator(".results-table td:last-child").first.evaluate(
-        "e => e.getBoundingClientRect().right <= e.closest('.results-table-wrap').getBoundingClientRect().right + 1"
-    ), f"results table clipped at {width}px"
+    assert page.locator('#horizonTable').evaluate('e => e.querySelectorAll("tbody tr").length === 5')
     assert page.evaluate("[...document.images].every(image => !image.complete || image.naturalWidth > 0)"), "broken image"
     assert not errors, errors
     page.close()

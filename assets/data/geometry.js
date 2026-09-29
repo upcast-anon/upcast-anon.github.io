@@ -1,0 +1,1 @@
+window.UPCAST_GEOMETRY={"poster":{"upcast":{"absRel":0.149,"fscore":0.918,"chamfer":0.035},"geometry-forcing":{"absRel":0.306,"fscore":0.877,"chamfer":0.052}},"hallway":{"upcast":{"absRel":0.17,"fscore":0.631,"chamfer":0.083},"geometry-forcing":{"absRel":0.245,"fscore":0.5,"chamfer":0.117}}};
