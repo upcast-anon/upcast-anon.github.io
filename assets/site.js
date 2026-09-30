@@ -404,6 +404,23 @@ const horizonResults = {
     ['UPCAST', '1217.6', '189.7', '0.664', '0.340', '9.59', '12.83', '–']
   ]
 };
+function markTableBest(table) {
+  const headers = Array.from(table.tHead.rows[0].cells).slice(1);
+  const rows = Array.from(table.tBodies[0].rows);
+  headers.forEach((header, index) => {
+    const ascending = header.textContent.includes('↓');
+    const descending = header.textContent.includes('↑');
+    if (!ascending && !descending) return;
+    const cells = rows.map((row) => row.cells[index + 1]);
+    const values = cells.map((cell) => Number.parseFloat(cell.textContent));
+    const valid = values.filter(Number.isFinite);
+    if (!valid.length) return;
+    const best = ascending ? Math.min(...valid) : Math.max(...valid);
+    cells.forEach((cell, rowIndex) => {
+      cell.classList.toggle('metric-best', values[rowIndex] === best);
+    });
+  });
+}
 function showHorizon(horizon) {
   const rows = horizonResults[horizon];
   const tbody = $('#horizonTable tbody');
@@ -418,14 +435,16 @@ function showHorizon(horizon) {
     values.forEach((value) => { const cell = document.createElement('td'); cell.textContent = value; row.append(cell); });
     tbody.append(row);
   });
+  markTableBest($('#horizonTable'));
   $('#horizonCaption').textContent = `${horizon}-frame rollouts · ${horizon === '64' ? '100' : '12'} matched videos`;
   $('#horizonNote').textContent = horizon === '64'
-    ? 'RPE uses the first 12 primary-test videos; other columns use all 100.'
-    : 'Separate 12-video stress cohort. Dashes indicate unreported metrics; these horizons characterize extrapolation beyond 16-frame training clips.';
+    ? 'Bold marks the best displayed value per metric. RPE uses the first 12 primary-test videos; other columns use all 100.'
+    : 'Bold marks the best displayed value per metric. Separate 12-video stress cohort; dashes indicate unreported metrics.';
   $$('[data-horizon]').forEach((button) => { const active = button.dataset.horizon === String(horizon); button.classList.toggle('active', active); button.setAttribute('aria-selected', String(active)); });
 }
 $$('[data-horizon]').forEach((button) => button.addEventListener('click', () => showHorizon(button.dataset.horizon)));
 showHorizon(64);
+$$('.results-table:not(#horizonTable)').forEach(markTableBest);
 
 const dialog = $('#figureDialog');
 $$('[data-figure]').forEach((button) => button.addEventListener('click', () => {

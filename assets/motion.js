@@ -17,7 +17,7 @@ const UpcastMotion = (() => {
     return dashed ? `${line}<path class="motion-dashed-final" d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-dasharray="10 7" stroke-linecap="round"/>` : line;
   };
   const label = (x, y, content, color = colors.ink, extra = '', delay = 0) => `<text x="${x}" y="${y}" style="fill:${color};--delay:${delay}s" class="motion-label ${extra}">${content}</text>`;
-  const box = (x, y, w, h, title, sub, tone, delay = 0) => `<g class="motion-rise" style="--delay:${delay}s"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="var(--${tone}-pale)" stroke="var(--${tone})" stroke-width="2"/><text x="${x + w / 2}" y="${y + 30}" text-anchor="middle" class="motion-box-title" fill="var(--${tone})">${title}</text>${sub ? `<text x="${x + w / 2}" y="${y + (title.includes('<tspan') ? h >= 80 ? 64 : 55 : 51)}" text-anchor="middle" class="motion-box-sub">${sub}</text>` : ''}</g>`;
+  const box = (x, y, w, h, title, sub, tone, delay = 0, compact = false) => `<g class="motion-rise" style="--delay:${delay}s"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="var(--${tone}-pale)" stroke="var(--${tone})" stroke-width="2"/><text x="${x + w / 2}" y="${y + 30}" text-anchor="middle" class="motion-box-title${compact ? ' compact' : ''}" fill="var(--${tone})">${title}</text>${sub ? `<text x="${x + w / 2}" y="${y + (title.includes('<tspan') ? h >= 80 ? 64 : 55 : 51)}" text-anchor="middle" class="motion-box-sub">${sub}</text>` : ''}</g>`;
   const tokens = (x, y, count, tone, delay = 0, rows = 1) => {
     const columns = Math.ceil(count / rows);
     const cells = Array.from({ length: count }, (_, n) => {
@@ -27,10 +27,10 @@ const UpcastMotion = (() => {
     }).join('');
     return `<g>${cells}</g>`;
   };
-  const root = (content, wide = false, title = '') => `<svg class="motion-svg" viewBox="0 0 ${wide ? 1100 : 900} ${wide ? 420 : 470}" role="img" aria-label="${title}" xmlns="http://www.w3.org/2000/svg">${content}</svg>`;
+  const root = (content, wide = false, title = '') => `<svg class="motion-svg" viewBox="0 0 ${wide ? 1400 : 900} ${wide ? 480 : 470}" role="img" aria-label="${title}" xmlns="http://www.w3.org/2000/svg">${content}</svg>`;
   const durations = {
-    idea: { alignment: 3.9, factorized: 4.8, generation: 4.9 },
-    method: { acquire: 5.85, transfer: 5.0, deploy: 5.0 }
+    idea: { alignment: 3.9, factorized: 5.3, generation: 4.9 },
+    method: { acquire: 8.0, transfer: 6.2, deploy: 5.1 }
   };
 
   const idea = {
@@ -62,10 +62,13 @@ const UpcastMotion = (() => {
       ${tokens(283, 344, 6, 'orange', 1.45, 1)}
       ${label(522, 175, 'Q', colors.green, 'motion-symbol motion-rise', 1.62)}
       ${label(522, 365, 'A', colors.orange, 'motion-symbol motion-rise', 1.82)}
-      ${trace('M547 168C596 168 575 226 627 226H674', colors.green, 2.0)}
-      ${trace('M547 357C596 357 575 273 627 273H674', colors.orange, 2.25)}
-      ${box(681, 198, 123, 105, 'U', 'coupled state', 'gold', 3.0)}
-      ${label(688, 336, 'invertible additive coupling', '#82908a', 'motion-small motion-rise', 3.34)}`, false, 'Geometry and video inform a shared physical code Q; video also informs private appearance A; coupling gives visual state U.'),
+      ${trace('M547 168C596 168 575 231 627 231H641', colors.green, 2.0)}
+      ${trace('M547 357C596 357 575 279 627 279H641', colors.orange, 2.25)}
+      ${box(648, 213, 112, 88, 'Coupling', 'invertible', 'purple', 2.9, true)}
+      ${trace('M760 257H775', colors.gold, 3.35)}
+      <g class="motion-rise" style="--delay:3.7s"><rect x="782" y="215" width="91" height="84" rx="4" fill="var(--gold-pale)" stroke="var(--gold)" stroke-width="2"/></g>
+      ${tokens(794, 228, 4, 'gold', 3.84, 2)}
+      ${label(821, 337, 'U', colors.gold, 'motion-symbol motion-rise', 4.18)}`, false, 'Geometry and video inform a shared physical code Q; video also informs private appearance A; invertible coupling gives visual state U.'),
     generation: () => root(`
       ${label(45, 55, 'DEPLOYMENT PATH', '#70817e', 'motion-kicker')}
       ${frame(70, 175, 118, 'method-frame-i.jpg', 'input xᵢ', .1)}
@@ -83,59 +86,84 @@ const UpcastMotion = (() => {
 
   const method = {
     acquire: () => root(`
-      ${label(28, 44, 'PAIRED OBSERVATIONS', '#71817f', 'motion-kicker')}
-      ${frame(43, 106, 82, 'method-frame-i.jpg', 'xᵢ', .05)}
-      ${frame(43, 236, 82, 'method-frame-j.jpg', 'xⱼ', .18)}
-      ${box(184, 98, 142, 62, 'PAGE-4D', 'frozen geometry', 'green', .35)}
-      ${box(184, 207, 142, 62, 'DFoT', 'video features', 'blue', .5)}
-      ${box(184, 316, 142, 62, 'DINOv2', 'frozen visual', 'orange', .65)}
-      ${trace('M128 161H174', colors.green, .3)}${trace('M128 161C158 161 149 237 174 237', colors.blue, .45)}${trace('M128 281C157 281 150 347 174 347', colors.orange, .55)}
-      ${trace('M326 129H375', colors.green, .85)}${trace('M326 238H375', colors.blue, 1)}${trace('M326 238C350 238 346 338 375 338', colors.blue, 1.1)}${trace('M326 347H375', colors.orange, 1.12)}
-      ${box(382, 90, 112, 70, 'E<tspan baseline-shift="sub" font-size="16">g</tspan>', 'physical', 'green', 1.1)}
-      ${box(382, 200, 112, 70, 'E<tspan baseline-shift="sub" font-size="16">v</tspan>', 'video', 'blue', 1.2)}
-      ${box(382, 309, 112, 70, 'F<tspan baseline-shift="sub" font-size="16">a</tspan>', 'appearance fuse', 'orange', 1.32)}
-      ${trace('M495 126C516 126 505 156 523 156', colors.green, 1.55)}
-      ${trace('M495 235C518 235 507 187 523 187', colors.blue, 1.68)}
-      ${box(530, 130, 92, 83, 'F<tspan baseline-shift="sub" font-size="16">p</tspan>', 'physical fuse', 'green', 1.83)}
-      ${trace('M622 170H643', colors.green, 2.1)}
-      ${box(650, 102, 130, 132, 'RVQ', 'shared across v/g/f', 'green', 2.31)}
-      ${tokens(665, 176, 4, 'green', 2.56)}
-      ${trace('M495 344H580C651 344 654 289 771 289H799', colors.orange, 2.16)}
-      ${label(644, 331, 'A_f', colors.orange, 'motion-small motion-rise', 2.65)}
-      ${trace('M780 170C807 170 792 248 799 248', colors.green, 2.7)}
-      ${box(806, 225, 92, 91, 'U<tspan baseline-shift="sub" font-size="16">m</tspan>', 'coupling', 'gold', 3.1)}
-      ${trace('M898 269H925', colors.gold, 3.23)}
-      ${box(932, 224, 142, 92, 'D<tspan baseline-shift="sub" font-size="16">v</tspan>', 'visual future', 'blue', 3.58)}
-      ${trace('M780 170C830 170 822 112 925 112', colors.green, 3.36)}
-      ${box(932, 70, 142, 82, 'D<tspan baseline-shift="sub" font-size="16">g</tspan>', 'geometry future', 'green', 3.9)}
-      <text x="770" y="395" text-anchor="middle" fill="#61716e" class="motion-small motion-rise" style="--delay:4.3s">Shared Q feeds geometry; coupled U feeds visual reconstruction</text>`, true, 'Paired frames provide video and geometry transitions; a fused physical path enters the shared RVQ while video and visual features form continuous appearance. Geometry reads Q; visual reconstruction reads coupled U.'),
+      ${label(31, 48, 'PAIRED OBSERVATIONS', '#71817f', 'motion-kicker')}
+      ${label(371, 48, 'BRANCH-WISE TRANSITIONS', colors.green, 'motion-kicker')}
+      ${label(785, 48, 'SHARED RVQ', colors.green, 'motion-kicker')}
+      ${label(1138, 48, 'FUTURE DECODERS', '#71817f', 'motion-kicker')}
+      ${frame(42, 95, 84, 'method-frame-i.jpg', 'xᵢ', .05)}
+      ${frame(42, 260, 84, 'method-frame-j.jpg', 'xⱼ', .16)}
+      <path d="M130 146h24v215 M130 303h24" fill="none" stroke="#91a3a3" stroke-width="1.8" class="motion-rise" style="--delay:.34s"/>
+      ${box(175, 101, 141, 72, 'PAGE-4D', 'frozen geometry', 'green', .55)}
+      ${box(175, 213, 141, 72, 'DFoT', 'video + controls', 'blue', .7)}
+      ${box(175, 325, 141, 72, 'DINOv2', 'frozen visual', 'orange', .85)}
+      ${trace('M154 146H168', colors.green, .44)}
+      ${trace('M154 248H168', colors.blue, .58)}
+      ${trace('M154 361H168', colors.orange, .72)}
+      ${trace('M316 137H369', colors.green, 1.05)}
+      ${trace('M316 249H369', colors.blue, 1.2)}
+      ${trace('M316 361H357', colors.orange, 1.34)}
+      ${trace('M316 249C347 249 340 367 357 367', colors.blue, 1.42)}
+      ${box(376, 103, 103, 73, 'E<tspan baseline-shift="sub" font-size="16">g</tspan>', 'geometry', 'green', 1.34)}
+      ${box(376, 215, 103, 73, 'E<tspan baseline-shift="sub" font-size="16">v</tspan>', 'video', 'blue', 1.48)}
+      ${box(364, 327, 160, 83, 'Appearance', 'encode + fuse', 'orange', 1.67, true)}
+      ${trace('M479 139H514C540 139 521 177 554 177H778', colors.green, 1.84)}
+      ${trace('M479 252H514C540 252 521 285 554 285H778', colors.blue, 2.04)}
+      ${trace('M518 139V226H555', colors.green, 2.22)}
+      ${trace('M518 252V257H555', colors.blue, 2.4)}
+      ${box(562, 218, 113, 77, 'Fusion', 'physical', 'green', 2.62)}
+      ${trace('M675 257H778', colors.green, 2.94)}
+      ${label(716, 158, 'Sg', colors.green, 'motion-small motion-rise', 2.42)}
+      ${label(716, 240, 'Sf', colors.green, 'motion-small motion-rise', 3.04)}
+      ${label(716, 309, 'Sv', colors.blue, 'motion-small motion-rise', 2.62)}
+      ${box(785, 125, 135, 205, 'RVQ', '', 'green', 2.38)}
+      ${tokens(794, 171, 4, 'green', 3.14)}
+      ${tokens(794, 221, 4, 'green', 3.29)}
+      ${tokens(794, 271, 4, 'green', 3.44)}
+      ${trace('M920 228H936', colors.green, 4.05)}
+      ${cube(944, 184, 53, 'green', 'Q<tspan baseline-shift="sub" font-size="15">m</tspan>', 4.3)}
+      ${tokens(704, 376, 6, 'orange', 2.7)}
+      ${trace('M524 369H696', colors.orange, 2.19)}
+      ${label(775, 446, 'Aₘ', colors.orange, 'motion-small motion-rise', 3.28)}
+      ${trace('M1007 230C1064 230 1083 156 1149 156', colors.green, 4.72)}
+      ${box(1156, 112, 201, 87, 'D<tspan baseline-shift="sub" font-size="16">g</tspan>', 'geometry future', 'green', 5.15)}
+      ${trace('M1007 230C1041 230 1018 343 1032 343', colors.green, 4.84)}
+      ${trace('M884 389H1001C1027 389 1013 376 1032 376', colors.orange, 4.87)}
+      ${box(1039, 305, 125, 96, 'Coupling', 'invertible', 'purple', 5.2, true)}
+      ${trace('M1164 350H1173', colors.gold, 5.56)}
+      ${tokens(1180, 328, 4, 'gold', 5.75, 2)}
+      ${label(1198, 419, 'Uₘ', colors.gold, 'motion-small motion-rise', 6.08)}
+      ${trace('M1235 350H1243', colors.gold, 6.0)}
+      ${box(1250, 310, 127, 88, 'D<tspan baseline-shift="sub" font-size="16">v</tspan>', 'visual future', 'blue', 6.25)}
+      <text x="1002" y="458" text-anchor="middle" class="motion-small motion-rise" style="--delay:6.65s">Geometry reads Q; visual prediction reads coupled U</text>`, true, 'The same frame pair feeds PAGE-4D, DFoT and DINOv2. Geometry, video and fused physical transitions enter one shared RVQ. A continuous appearance path enters invertible coupling; geometry reads Q and visual prediction reads U.'),
     transfer: () => root(`
-      ${label(35, 47, 'PAIRED PHYSICAL CODES', '#71817f', 'motion-kicker')}
-      ${cube(57, 122, 76, 'green', 'Q<tspan baseline-shift="sub" font-size="16">v</tspan>', .12)}
-      ${cube(57, 259, 76, 'green', 'Q<tspan baseline-shift="sub" font-size="16">f</tspan>', .28)}
-      ${trace('M153 178C202 178 190 220 246 220', colors.green, .6)}
-      ${trace('M153 315C202 315 190 251 246 251', colors.green, .72)}
-      ${box(253, 181, 178, 103, 'Q<tspan baseline-shift="sub" font-size="16">f</tspan> − Q<tspan baseline-shift="sub" font-size="16">v</tspan>', 'paired innovation', 'purple', .96)}
-      ${trace('M431 232H480', colors.purple, 1.28)}
-      ${box(487, 168, 165, 129, 'Conditioner', 'training-time teacher', 'purple', 1.53)}
-      ${trace('M652 232H716', colors.purple, 1.93, 2.8, true)}
-      <g class="motion-rise" style="--delay:2.35s"><circle cx="751" cy="232" r="31" fill="#f2ecf7" stroke="${colors.purple}" stroke-width="2"/><path d="m739 231 9 9 16-19" fill="none" stroke="${colors.purple}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><text x="750" y="299" text-anchor="middle" class="motion-small">valid FM gain</text></g>
-      ${trace('M783 232H830', colors.purple, 2.68, 2.8, true)}
-      ${box(837, 168, 214, 129, 'Student DFoT', 'backbone weight update', 'blue', 2.95)}
-      <g class="motion-rise" style="--delay:3.45s"><line x1="837" y1="347" x2="1051" y2="347" stroke="#c3d4ce" stroke-width="1.5"/><text x="944" y="376" text-anchor="middle" class="motion-small">Auxiliary paths are removed after training</text></g>`, true, 'A paired innovation conditions a training-time teacher; selective distillation transfers valid corrections to the DFoT student.'),
+      ${label(39, 48, 'PAIRED PHYSICAL CODES', '#71817f', 'motion-kicker')}
+      ${cube(67, 110, 78, 'green', 'Q<tspan baseline-shift="sub" font-size="16">v</tspan>', .08)}
+      ${cube(67, 275, 78, 'green', 'Q<tspan baseline-shift="sub" font-size="16">f</tspan>', .22)}
+      ${trace('M159 167C205 167 199 222 251 222', colors.green, .57)}
+      ${trace('M159 332C205 332 199 258 251 258', colors.green, .7)}
+      ${box(258, 187, 202, 111, 'Q<tspan baseline-shift="sub" font-size="16">f</tspan> − Q<tspan baseline-shift="sub" font-size="16">v</tspan>', 'paired innovation', 'purple', 1.0)}
+      ${trace('M460 241H496', colors.purple, 1.39)}
+      ${box(503, 187, 180, 111, 'Conditioner', 'training only', 'purple', 1.7)}
+      ${trace('M683 241H729', colors.purple, 2.1)}
+      ${box(736, 187, 190, 111, 'Teacher DFoT', 'fused evidence', 'blue', 2.47)}
+      ${trace('M926 241H992', colors.purple, 2.88, 2.8, true)}
+      <g class="motion-rise" style="--delay:3.15s"><circle cx="1034" cy="241" r="29" fill="#f2ecf7" stroke="${colors.purple}" stroke-width="2"/><path d="m1023 240 8 8 15-17" fill="none" stroke="${colors.purple}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><text x="1034" y="317" text-anchor="middle" class="motion-small">eₜ &lt; eₛ</text></g>
+      ${trace('M1064 241H1104', colors.purple, 3.96, 2.8, true)}
+      ${box(1111, 187, 240, 111, 'Student DFoT', 'backbone update', 'blue', 4.2)}
+      <g class="motion-rise" style="--delay:4.9s"><line x1="735" y1="375" x2="1351" y2="375" stroke="#c3d4ce" stroke-width="1.5"/><text x="1043" y="410" text-anchor="middle" class="motion-small">The conditioner and teacher are removed after training</text></g>`, true, 'Video-only and fused physical codes form a paired innovation. The conditioner guides a teacher DFoT; selective distillation transfers only lower-error teacher predictions into the student backbone.'),
     deploy: () => root(`
-      ${label(37, 48, 'BACKBONE-ONLY INFERENCE', '#71817f', 'motion-kicker')}
-      ${frame(65, 135, 116, 'method-frame-i.jpg', 'input frame', .1)}
-      ${box(67, 50, 154, 70, 'Camera', 'controls', 'blue', .35)}
-      ${trace('M221 89C266 89 264 160 285 160', colors.blue, .62)}
-      ${trace('M190 202H285', colors.blue, .65)}
-      ${box(292, 126, 267, 161, 'DFoT', 'consolidated video backbone', 'blue', 1.05)}
-      <g class="motion-rise" style="--delay:1.43s">${[0, 1, 2, 3, 4, 5].map((n) => `<rect x="${317 + n * 36}" y="225" width="23" height="23" fill="${n % 2 ? '#e5eff5' : '#a9c9dc'}" stroke="${colors.blue}"/>`).join('')}</g>
-      ${trace('M559 202H622', colors.blue, 1.7)}
-      ${frame(638, 135, 100, 'timeline-16.jpg', '16', 2.05)}
-      ${frame(754, 135, 100, 'timeline-32.jpg', '32', 2.55)}
-      ${frame(870, 135, 100, 'timeline-64.jpg', '64', 3.05)}
-      <g class="motion-rise" style="--delay:3.5s"><line x1="293" y1="343" x2="970" y2="343" stroke="#c3d6ce" stroke-width="1.5"/><text x="631" y="380" text-anchor="middle" class="motion-small">No PAGE-4D · no DINOv2 · no RVQ · no conditioner</text></g>`, true, 'At deployment, only the original camera-conditioned DFoT backbone generates an RGB rollout.')
+      ${label(46, 48, 'BACKBONE-ONLY INFERENCE', '#71817f', 'motion-kicker')}
+      ${frame(128, 174, 124, 'method-frame-i.jpg', 'input frame', .08)}
+      ${box(137, 70, 158, 75, 'Camera', 'controls', 'blue', .32)}
+      ${trace('M295 111C350 111 352 200 453 200', colors.blue, .65)}
+      ${trace('M256 236H453', colors.blue, .72)}
+      ${box(460, 163, 292, 170, 'DFoT', 'consolidated video backbone', 'blue', 1.08)}
+      <g class="motion-rise" style="--delay:1.55s">${[0, 1, 2, 3, 4, 5].map((n) => `<rect x="${485 + n * 40}" y="267" width="26" height="24" fill="${n % 2 ? '#e5eff5' : '#a9c9dc'}" stroke="${colors.blue}"/>`).join('')}</g>
+      ${trace('M752 242H867', colors.blue, 1.85)}
+      ${frame(885, 178, 111, 'timeline-16.jpg', '16', 2.24)}
+      ${frame(1030, 178, 111, 'timeline-32.jpg', '32', 2.7)}
+      ${frame(1175, 178, 111, 'timeline-64.jpg', '64', 3.16)}
+      <g class="motion-rise" style="--delay:3.7s"><line x1="461" y1="393" x2="1286" y2="393" stroke="#c3d6ce" stroke-width="1.5"/><text x="874" y="428" text-anchor="middle" class="motion-small">No geometry encoder · appearance branch · RVQ · conditioner at inference</text></g>`, true, 'At deployment, only the camera-conditioned DFoT backbone generates the RGB rollout.')
   };
 
   function createViewport(canvasClass) {

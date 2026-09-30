@@ -121,9 +121,13 @@ def test_page(browser, width: int, height: int) -> None:
 
     page.locator('[data-horizon="256"]').click()
     assert '1217.6' in page.locator('#horizonTable').inner_text()
+    assert page.locator('#horizonTable tbody tr.ours-row .metric-best').count() == 3
     page.locator('[data-horizon="64"]').click()
+    assert page.locator('#horizonTable tbody tr.ours-row .metric-best').count() == 5
+    assert page.locator('#horizonTable tbody tr:nth-child(4) .metric-best').count() == 2
     page.locator('.complete-metrics summary').first.click()
     assert '29.13' in page.locator('.complete-metrics').first.inner_text()
+    assert page.locator('.complete-metrics').first.locator('.results-table tbody tr.ours-row .metric-best').count() == 7
     page.locator('.action-metrics summary').click()
     assert '89.78%' in page.locator('.action-metrics').inner_text()
     for selector, filename in (("#idea", "idea"), ("#explore", "explore"), ("#temporal", "temporal"), ("#method", "method"), ("#geometry", "geometry"), ("#results", "results"), ("#evidence", "evidence"), ("#resources", "resources")):
@@ -174,6 +178,27 @@ def test_motion_timing(browser) -> None:
     assert page.locator('[data-method-panel="transfer"] .motion-trace.dashed').first.evaluate(
         "e => getComputedStyle(e).opacity === '0' && getComputedStyle(e.nextElementSibling).opacity === '1'"
     )
+    for step in ('acquire', 'transfer', 'deploy'):
+        page.locator(f'[data-method="{step}"]').click()
+        assert page.locator(f'[data-method-panel="{step}"] .motion-svg').evaluate("""svg => {
+          const {width, height} = svg.viewBox.baseVal;
+          return [...svg.querySelectorAll('text')].every(text => {
+            const box = text.getBBox();
+            return box.x >= -1 && box.x + box.width <= width + 1 &&
+              box.y >= -1 && box.y + box.height <= height + 1;
+          }) && [...svg.querySelectorAll('text.motion-box-title')].every(text => {
+            const title = text.getBBox();
+            const frame = text.previousElementSibling.getBBox();
+            return title.x >= frame.x - 1 && title.x + title.width <= frame.x + frame.width + 1;
+          });
+        }""")
+    page.locator('[data-method="acquire"]').click()
+    assert page.locator('[data-method-panel="acquire"] .motion-svg').evaluate("""svg => {
+      const rvq = [...svg.querySelectorAll('.motion-box-title')].find(t => t.textContent === 'RVQ').parentElement;
+      const path = [...svg.querySelectorAll('.motion-trace')].find(p => p.getAttribute('d').startsWith('M479 139'));
+      return parseFloat(rvq.style.getPropertyValue('--delay')) <=
+        parseFloat(path.style.getPropertyValue('--delay')) + parseFloat(path.style.getPropertyValue('--draw-duration'));
+    }""")
     assert not errors, errors
     page.close()
 

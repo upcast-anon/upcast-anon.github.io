@@ -17,16 +17,14 @@
   width: 100%;
   position: relative;
   border: 1px solid #d9e4dc;
-  background-color: #fbfdfb;
-  background-image: linear-gradient(#e8eeea 1px, transparent 1px), linear-gradient(90deg, #e8eeea 1px, transparent 1px);
-  background-size: 26px 26px;
+  background-color: #fff;
   overflow: hidden;
 }
 .motion-viewport { width: 100%; overflow-x: auto; }
 .motion-pan-nav { display: none; width: 100%; }
 .motion-svg { display: block; width: 100%; height: 100%; }
 .idea-motion { aspect-ratio: 900 / 470; }
-.method-motion { aspect-ratio: 1100 / 420; margin: 6px 0 17px; }
+.method-motion { aspect-ratio: 1400 / 480; margin: 6px 0 17px; }
 .idea-panel-art.is-enhanced #ideaPanelImage,
 .method-panel.is-enhanced .acquire-diagram,
 .method-panel.is-enhanced .transfer-diagram,
@@ -45,6 +43,7 @@
 .motion-svg .motion-small { font-size: 15px; fill: #667975; }
 .motion-svg .motion-math { font-family: Georgia, serif; font-size: 22px; font-style: italic; fill: #37525d; }
 .motion-svg .motion-box-title { font-size: 25px; font-weight: 800; }
+.motion-svg .motion-box-title.compact { font-size: 20px; }
 .motion-svg .motion-box-sub { font-size: 14px; fill: #60716e; }
 .motion-rise { opacity: 0; animation: motionReveal .42s ease-out var(--delay, 0s) forwards; }
 .motion-trace { stroke-dasharray: var(--path-length); stroke-dashoffset: var(--path-length); animation: motionDraw var(--draw-duration, .6s) ease-in-out var(--delay, 0s) forwards; }
@@ -96,7 +95,7 @@
   .motion-pan-nav button:disabled { opacity: .3; cursor: default; }
   .motion-pan-nav svg { width: 15px; height: 15px; }
   .idea-motion { min-width: 660px; aspect-ratio: 900 / 470; }
-  .method-motion { min-width: 760px; aspect-ratio: 1100 / 420; }
+  .method-motion { min-width: 980px; aspect-ratio: 1400 / 480; }
   .stage-explorer-head { display: block; }
   .stage-metric-tabs { width: max-content; margin-top: 15px; }
   .stage-plot-wrap { overflow-x: auto; }

@@ -34,11 +34,16 @@
 
 /* Project-page presentation: the paper figures remain available without making
    dense print diagrams carry the primary on-screen explanation. */
-:root{--ink:#243139;--ink-soft:#57696f;--green:#25745d;--line:#d3dedb;--paper:#f8faf9;--dark:#172a2e}
+:root{--ink:#243139;--ink-soft:#57696f;--green:#25745d;--line:#d3dedb;--paper:#f7f9fa;--dark:#172a2e}
 h2{font-size:3.65rem;line-height:1.12}
 .site-header{top:16px;height:auto;padding:0;border:0;background:transparent}
 .header-inner{min-height:66px;display:flex;align-items:center;justify-content:space-between;gap:30px;padding:0 25px;background:rgba(19,34,37,.94);border:1px solid rgba(225,242,232,.24);box-shadow:0 12px 35px #081a1b30}
 .site-header .brand{font-size:18px;letter-spacing:0}
+.brand-mark{display:block;width:27px;height:27px;flex:none;overflow:visible;transform:none}
+.brand-mark path:first-child{stroke:#68c5a1}
+.brand-mark path:nth-child(2){stroke:#e5a36b}
+.brand-mark path:nth-child(3){stroke:#e5ba55}
+.brand-mark rect{fill:#e5ba55}
 .desktop-nav{gap:35px}
 .desktop-nav a{font-size:13px;font-weight:700;color:#e8f1ed;opacity:1}
 .desktop-nav a:hover{color:#a2e2ba}
@@ -50,7 +55,7 @@ h2{font-size:3.65rem;line-height:1.12}
 .hero-subtitle{font-size:1.95rem;max-width:690px}
 .hero-summary{font-size:1.03rem;max-width:650px}
 .hero-bottom{bottom:26px}
-.metrics-band{background:#edf3ef}
+.metrics-band{background:#edf2f3}
 .metric{min-height:128px}
 .metric strong{font-size:2.55rem}
 .metric:nth-child(3) strong{color:#486d90}
@@ -196,9 +201,21 @@ h2{font-size:3.65rem;line-height:1.12}
 .geometry-metrics>p:not(.geometry-takeaway){margin-bottom:13px}
 .geo-metric{grid-template-columns:minmax(0,1fr) 74px 74px;gap:9px}
 .geo-metric strong{font-size:18px}
-.results-section{background:#edf3ef}
+.results-section{background:#f0f4f5}
+.results-lead{display:grid;grid-template-columns:1.2fr repeat(3,1fr);border-top:1px solid #bfced0;border-bottom:1px solid #bfced0;margin:-4px 0 27px}
+.results-lead>div{min-width:0;padding:20px 23px 20px 0;border-right:1px solid #d0dcde;display:flex;flex-direction:column;justify-content:center}
+.results-lead>div+div{padding-left:23px}
+.results-lead>div:last-child{border-right:0}
+.results-lead span{font-size:10px;font-weight:800;letter-spacing:.08em;color:#557877}
+.results-lead-summary strong{font-size:2.35rem;line-height:1.1;color:#24765d}
+.results-lead-summary p{margin:0;font-size:12px;color:#57706b}
+.results-lead-metric strong{font-size:1.65rem;line-height:1.2;font-variant-numeric:tabular-nums;color:#243c42;white-space:nowrap}
+.results-lead-metric small{font-size:.55em;font-weight:600;color:#6e8085}
+.results-lead-metric em{font-style:normal;font-size:11px;font-weight:800;color:#24765d}
 .results-table-wrap{border-top:2px solid #32785e}
 .results-table{table-layout:fixed}
+.results-table td.metric-best{font-weight:800;color:inherit}
+.results-table tr.ours-row td.metric-best{color:#185e49}
 .results-table thead th:first-child,.results-table tbody th,.results-table tbody tr.ours-row th{padding-left:18px}
 .results-table th:first-child{width:34%}
 .results-table th:not(:first-child),.results-table td{width:13.2%;text-align:right;padding-right:20px}
@@ -253,6 +270,10 @@ h2{font-size:3.65rem;line-height:1.12}
   .deploy-output{max-width:480px;justify-self:center;width:100%}
   .geometry-layout{grid-template-columns:1fr}
   .geometry-side{display:grid;grid-template-columns:1fr}
+  .results-lead{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .results-lead>div:nth-child(2){border-right:0}
+  .results-lead>div:nth-child(-n+2){border-bottom:1px solid #d0dcde}
+  .results-lead>div:nth-child(3){padding-left:0}
 }
 @media(max-width:560px){
   h2{font-size:2.35rem}
@@ -295,6 +316,11 @@ h2{font-size:3.65rem;line-height:1.12}
   .results-table thead th{font-size:9px;letter-spacing:0;padding:12px 4px}
   .results-table tbody th,.results-table tbody td{font-size:10px;padding-top:12px;padding-bottom:12px}
   .results-table th:not(:first-child),.results-table td{padding-right:4px}
+  .results-lead>div{padding-top:14px;padding-bottom:14px}
+  .results-lead>div+div{padding-left:14px}
+  .results-lead>div:nth-child(3){padding-left:0}
+  .results-lead-metric strong{font-size:1.3rem}
+  .results-lead-summary strong{font-size:2rem}
 }
 @media(prefers-reduced-motion:reduce){.diagram-path::after,.model-pulses i{animation:none}}
 
