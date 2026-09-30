@@ -24,6 +24,7 @@ def test_page(browser, width: int, height: int) -> None:
     assert page.locator("#horizonTable tbody tr").count() == 5
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), f"horizontal overflow at {width}px"
     assert page.locator('#compareOurs').evaluate('e => e.currentTime') < .5
+    assert '100 matched videos' in page.locator('#horizonCaption').text_content()
 
     if width > 860:
         page.screenshot(path="/tmp/upcast-final-desktop-hero.png")
@@ -44,17 +45,12 @@ def test_page(browser, width: int, height: int) -> None:
         ), f'guided figure clipped at {width}px: {step}'
     page.locator('[data-idea="factorized"]').click()
     assert "intro-factorized.png" in page.locator("#ideaPanelImage").get_attribute("src")
-    page.locator('#ideaAuto').click()
     assert page.locator('#ideaAuto').get_attribute('aria-label') == 'Pause guided walkthrough'
     page.locator('#ideaAuto').click()
     assert page.locator('#ideaPanelArt .motion-canvas').evaluate(
         "e => e.getAnimations({subtree:true}).some(a => a.playState === 'paused')"
     )
-    if width <= 560:
-        page.locator('#ideaPanelArt .motion-pan-nav button').nth(1).click()
-        page.wait_for_timeout(400)
-        assert page.locator('#ideaPanelArt .motion-viewport').evaluate('e => e.scrollLeft') > 0
-        page.locator('#ideaPanelArt .motion-pan-nav button').first.click()
+    assert page.locator('#ideaPanelArt .motion-viewport').evaluate('e => e.scrollWidth <= e.clientWidth + 1')
     assert page.locator('.full-paper-figure img').count() == 2
     page.locator('[data-scene="entryway"]').click()
     assert "entryway-upcast.mp4" in page.locator("#compareOurs source").get_attribute("src")
@@ -73,7 +69,6 @@ def test_page(browser, width: int, height: int) -> None:
     page.locator('[data-method="deploy"]').click()
     assert page.locator('[data-method-panel="deploy"]').is_visible()
     page.locator('[data-method="acquire"]').click()
-    page.locator('#methodAuto').click()
     assert page.locator('#methodAuto').get_attribute('aria-label') == 'Pause method walkthrough'
     page.locator('#methodAuto').click()
     page.locator('[data-feature="vjepa"]').click()
@@ -141,68 +136,6 @@ def test_page(browser, width: int, height: int) -> None:
     page.close()
 
 
-def test_motion_timing(browser) -> None:
-    page = browser.new_page(viewport={"width": 1440, "height": 900})
-    errors = []
-    page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(URL, wait_until="load")
-    page.locator('[data-idea="factorized"]').click()
-    assert page.locator('.idea-motion .motion-trace').first.evaluate(
-        "e => Math.abs(parseFloat(getComputedStyle(e).strokeDasharray) - e.getTotalLength()) < 1"
-    )
-    page.evaluate("window.previousCanvas = document.querySelector('.idea-motion')")
-    page.locator('[data-idea="generation"]').click()
-    assert page.evaluate("!window.previousCanvas.isConnected")
-    assert page.locator('.idea-motion').evaluate(
-        "e => new DOMMatrix(getComputedStyle(e, '::after').transform).a < .25"
-    )
-    page.locator('[data-idea="factorized"]').click()
-    page.locator('#ideaAuto').click()
-    page.wait_for_timeout(650)
-    page.locator('#ideaAuto').click()
-    page.wait_for_timeout(80)
-    frozen = page.locator('.idea-motion').evaluate(
-        "e => e.getAnimations({subtree:true}).filter(a => a.playState === 'paused').map(a => a.currentTime)"
-    )
-    assert frozen
-    page.wait_for_timeout(500)
-    resumed = page.locator('.idea-motion').evaluate(
-        "e => e.getAnimations({subtree:true}).filter(a => a.playState === 'paused').map(a => a.currentTime)"
-    )
-    assert len(frozen) == len(resumed)
-    assert max(abs(before - after) for before, after in zip(frozen, resumed)) < 2
-    page.locator('#ideaAuto').click()
-    page.wait_for_function("document.querySelector('[data-idea=generation]').classList.contains('active')", timeout=7000)
-    page.locator('[data-method="transfer"]').click()
-    page.wait_for_timeout(3900)
-    assert page.locator('[data-method-panel="transfer"] .motion-trace.dashed').first.evaluate(
-        "e => getComputedStyle(e).opacity === '0' && getComputedStyle(e.nextElementSibling).opacity === '1'"
-    )
-    for step in ('acquire', 'transfer', 'deploy'):
-        page.locator(f'[data-method="{step}"]').click()
-        assert page.locator(f'[data-method-panel="{step}"] .motion-svg').evaluate("""svg => {
-          const {width, height} = svg.viewBox.baseVal;
-          return [...svg.querySelectorAll('text')].every(text => {
-            const box = text.getBBox();
-            return box.x >= -1 && box.x + box.width <= width + 1 &&
-              box.y >= -1 && box.y + box.height <= height + 1;
-          }) && [...svg.querySelectorAll('text.motion-box-title')].every(text => {
-            const title = text.getBBox();
-            const frame = text.previousElementSibling.getBBox();
-            return title.x >= frame.x - 1 && title.x + title.width <= frame.x + frame.width + 1;
-          });
-        }""")
-    page.locator('[data-method="acquire"]').click()
-    assert page.locator('[data-method-panel="acquire"] .motion-svg').evaluate("""svg => {
-      const rvq = [...svg.querySelectorAll('.motion-box-title')].find(t => t.textContent === 'RVQ').parentElement;
-      const path = [...svg.querySelectorAll('.motion-trace')].find(p => p.getAttribute('d').startsWith('M479 139'));
-      return parseFloat(rvq.style.getPropertyValue('--delay')) <=
-        parseFloat(path.style.getPropertyValue('--delay')) + parseFloat(path.style.getPropertyValue('--draw-duration'));
-    }""")
-    assert not errors, errors
-    page.close()
-
-
 if __name__ == "__main__":
     with sync_playwright() as playwright:
         launch_options = {"headless": True, "args": ["--no-sandbox"]}
@@ -221,6 +154,4 @@ if __name__ == "__main__":
         )
         reduced.close()
         print("OK reduced motion")
-        test_motion_timing(browser)
-        print("OK motion timing")
         browser.close()

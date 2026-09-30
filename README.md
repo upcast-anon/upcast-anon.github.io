@@ -30,3 +30,39 @@ Browser smoke test (requires Playwright and Chromium):
 ```sh
 python tools/smoke_test.py
 ```
+
+## Storyboards and themes
+
+`assets/storyboard.js` contains six responsive vector storyboards. Desktop and
+mobile use separate fixed layouts; node positions do not move during a reveal.
+`assets/presentation.css` supplies the light/dark presentation. Theme preference
+follows the system initially and persists after a manual selection.
+
+`python tools/check_storyboards.py` checks text containment, wire/module
+intersections, stable canvas sizing, theme persistence and playback timing at
+five viewport widths.
+
+## Narrated overview
+
+The film is an original browser-rendered composition with English synthetic
+narration (Edge TTS, Aria), synchronized captions, animated vector diagrams,
+paper-reported results and existing generated clips. No reference-site media,
+voice recording or music is redistributed. RoboCoach and ConfAL-WM informed the
+walkthrough, evidence ordering and presentation style; the implementation and
+video composition here are original.
+
+Sources: `tools/film_script.json`, `tools/film.html`, `tools/build_film.py`.
+Build dependencies: `edge-tts`, `playwright`, `imageio-ffmpeg`, Chromium.
+
+```sh
+python tools/build_film.py --preview
+python tools/build_film.py
+```
+
+The renderer caches narration and segments in `/tmp/upcast-film-build`. Remove
+the affected cached segments after changing a scene. After changing narration,
+also remove the corresponding voice files and `manifest.json`. Published assets
+are `assets/media/upcast-overview.mp4`, its poster, captions and chapter times.
+The MP4 is 1920 x 1080 at 24 fps; source generation clips retain their original
+256 x 256 resolution and 8 fps. Code/checkpoint/evaluation release entries are
+explicitly pending, not links to unpublished repositories.

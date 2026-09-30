@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <base href="../">
+  <link rel="stylesheet" href="assets/motion.css">
+  <link rel="stylesheet" href="assets/presentation.css">
+  <style>
+    @font-face{font-family:Manrope;src:url(assets/manrope-latin.woff2)}
+    *{box-sizing:border-box}body{margin:0;background:#15191d;color:#e7edf0;font-family:Manrope,Arial,sans-serif;width:1280px;height:720px;overflow:hidden}
+    #film{position:relative;width:1280px;height:720px;padding:35px 54px 100px}
+    header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #3b454d;padding-bottom:15px;margin-bottom:27px}
+    .brand{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px}.brand img{width:28px;height:28px}
+    #eyebrow{font-size:12px;color:#a7b6be;font-weight:600}h1{font-size:38px;line-height:1.18;font-weight:700;letter-spacing:0;margin:0 0 24px;max-width:1140px}
+    #visual{height:415px;position:relative}#visual .motion-canvas{background:transparent;width:100%;height:100%;max-width:1140px;margin:auto}#visual .motion-svg{width:100%;height:100%}
+    .motion-canvas::after{display:none}.motion-svg .motion-foot-title{font-size:15px}.motion-svg .motion-small{font-size:13px}
+    #subtitle{position:absolute;bottom:31px;left:90px;right:90px;text-align:center;font-size:21px;line-height:1.4;min-height:59px;display:flex;align-items:center;justify-content:center;color:#eef3f5}
+    #progress{position:absolute;bottom:0;left:0;height:3px;background:#7dccaf}
+    .film-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;padding:7px 0}.film-grid video{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#20272c}.film-grid figure{margin:0;min-width:0}.film-grid figcaption{font-size:15px;color:#b7c4ca;display:flex;justify-content:space-between;padding-top:12px}.film-grid .ours video{outline:2px solid #7dccaf;outline-offset:4px}.film-grid .ours figcaption{color:#9ee3c4}
+    .film-grid small{font-size:12px;color:#aab9c0}.opening{display:grid;grid-template-columns:420px 1fr;gap:55px;align-items:center;height:100%}.opening h2{font-size:78px;line-height:1;margin:0 0 20px;letter-spacing:0}.opening p{font-size:26px;line-height:1.45;margin:0;color:#b4c6cc}.opening video{width:280px;height:280px;object-fit:contain}.montage{display:grid;grid-template-columns:repeat(2,280px);gap:15px}.montage video:last-child{margin-top:60px}.opening .accent{color:#7dccaf}
+    .closing-copy h2{font-size:48px;line-height:1.2}.url{font-size:20px!important;color:#9ee3c4!important;margin-top:28px!important}
+    .result-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:38px;margin-top:45px}.result{border-top:1px solid #526069;padding-top:17px;min-width:0}.result>span{font-size:16px;color:#b6c4cb}.result>strong{display:block;font-size:42px;color:#9ee3c4;margin:12px 0 22px}.bar-label{display:flex;justify-content:space-between;font-size:14px;margin:12px 0 7px}.bar{height:9px;background:#273139}.bar i{display:block;height:100%;width:calc(var(--value)*var(--reveal));background:#859ca7}.bar.ours i{background:#7dccaf}.result-note{color:#acbcc4;font-size:15px;margin-top:35px}
+    .stage-layout{display:grid;grid-template-columns:760px 1fr;gap:44px;align-items:center}.stage-layout h3{font-size:28px;line-height:1.35;margin:0 0 20px}.stage-layout p{color:#b3c1c9;line-height:1.6;font-size:17px}.stage-layout svg{width:100%;overflow:visible}.stage-layout svg text{font-family:Manrope,Arial,sans-serif}
+    .geo-layout{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.geo-layout figure{margin:0}.geo-layout img{width:100%;aspect-ratio:1}.geo-layout figcaption{font-size:14px;color:#b8c5cd;padding-top:10px}.geo-bottom{display:flex;gap:30px;padding-top:25px;font-size:16px;color:#b8c5cd}.geo-bottom strong{color:#9ee3c4}
+  </style>
+</head>
+<body>
+<div id="film"><header><div class="brand"><img src="assets/favicon.svg" alt="">UPCAST</div><span id="eyebrow"></span></header><h1 id="title"></h1><div id="visual"></div><div id="subtitle"></div><div id="progress"></div></div>
+<script src="assets/storyboard.js"></script>
+<script>
+  let currentScene, currentIndex, sceneCount;
+  const video = (scene, method = 'upcast') => `<video muted playsinline preload="auto" src="assets/media/${scene}-${method}.mp4"></video>`;
+  function results() {
+    return `<div class="result-grid">${[
+      ['FVD ↓','6.9% lower',534.9,497.8,'534.9','497.8'],
+      ['JEDi ↓','11.8% lower',4.40,3.88,'4.40','3.88'],
+      ['PSNR ↑','+1.50 dB',12.44,13.94,'12.44','13.94']
+    ].map(([metric,change,gf,ours,gs,os]) => `<div class="result"><span>${metric}</span><strong>${change}</strong><div class="bar-label"><span>Geometry Forcing</span><b>${gs}</b></div><div class="bar"><i style="--value:${gf/Math.max(gf,ours)*100}%"></i></div><div class="bar-label"><span>UPCAST</span><b>${os}</b></div><div class="bar ours"><i style="--value:${ours/Math.max(gf,ours)*100}%"></i></div></div>`).join('')}</div><p class="result-note">RealEstate10K · 100 matched 64-frame videos · same conditioning and sampling seeds</p>`;
+  }
+  function stages() {
+    const values = [7.88,6.59,6.05,5.90], names = ['Original','Unified space','Consolidation','Refinement'];
+    const points = values.map((v,i) => [65+i*205,65+(8-v)*100]);
+    return `<div class="stage-layout"><svg viewBox="0 0 760 390"><text x="20" y="28" fill="#b2c2cb" font-size="15">JEDi ↓</text>${[6,7,8].map(v=>`<line x1="50" x2="720" y1="${65+(8-v)*100}" y2="${65+(8-v)*100}" stroke="#36434c"/><text x="22" y="${70+(8-v)*100}" fill="#a5b7c0" font-size="13">${v}</text>`).join('')}<path d="${points.map((p,i)=>(i?'L':'M')+p.join(' ')).join(' ')}" stroke="#7dccaf" stroke-width="3" fill="none" pathLength="1" class="film-curve"/>${points.map(([x,y],i)=>`<g class="film-point" data-at="${i*.8+.7}"><circle cx="${x}" cy="${y}" r="6" fill="#15191d" stroke="#7dccaf" stroke-width="3"/><text x="${x}" y="${y-18}" fill="#9ee3c4" text-anchor="middle" font-size="23">${values[i].toFixed(2)}</text><text x="${x}" y="332" text-anchor="middle" fill="#bdc9d0" font-size="14">${names[i]}</text></g>`).join('')}</svg><div><h3>Every stage.<br>Backbone-only evaluation.</h3><p>25 matched 64-frame rollouts along one checkpoint lineage.</p><p>Visual fidelity and distributional metrics capture different aspects of the changes.</p></div></div>`;
+  }
+  async function loadScene(scene, index, count) {
+    window.sceneReady = false; currentScene=scene; currentIndex=index; sceneCount=count;
+    document.querySelector('#title').textContent=scene.key==='opening'?'Learning factorized world transitions.':scene.title;
+    document.querySelector('#eyebrow').textContent=scene.eyebrow;
+    let content='';
+    if (['motivation','factorized','acquire','transfer'].includes(scene.key)) {
+      const kind=['motivation','factorized'].includes(scene.key)?'idea':'method';
+      const key=scene.key==='motivation'?'alignment':scene.key;
+      content=`<div class="motion-canvas">${UpcastMotion.render(kind,key)}</div>`;
+    } else if(scene.key==='opening'||scene.key==='closing') {
+      content=`<div class="opening ${scene.key==='closing'?'closing-copy':''}"><div><h2>${scene.key==='opening'?'UPCAST<span class="accent">.</span>':'Factorized<br>world transitions.'}</h2><p>${scene.key==='opening'?'Structure and appearance.<br>One video backbone.':'Geometry-aware learning.<br>Backbone-only generation.'}</p>${scene.key==='closing'?'<p class="url">upcast-anon.github.io</p>':''}</div><div class="montage">${video('stairwell')}${video('bathroom')}</div></div>`;
+    } else if(scene.key==='rollouts') {
+      content=`<div class="film-grid">${[['reference','Reference','Real video'],['upcast','UPCAST','Backbone only'],['geometry-forcing','Geometry Forcing','Baseline']].map(([key,label,note])=>`<figure class="${key==='upcast'?'ours':''}">${video('stairwell',key)}<figcaption>${label}<small>${note}</small></figcaption></figure>`).join('')}</div>`;
+    } else if(scene.key==='results') content=results();
+    else if(scene.key==='stages') content=stages();
+    else if(scene.key==='geometry') content=`<div class="geo-layout">${[['reference-rgb','Reference RGB'],['reference-depth','Sensor depth'],['upcast-depth','UPCAST depth'],['geometry-forcing-depth','Geometry Forcing depth']].map(([key,label])=>`<figure><img src="assets/media/geometry-hallway-${key}-17.jpg"><figcaption>${label}</figcaption></figure>`).join('')}</div><div class="geo-bottom"><span><strong>12 clips</strong> · zero-shot transfer</span><span><strong>0.194</strong> depth AbsRel vs. 0.216</span><span><strong>0.627</strong> F@10cm vs. 0.621</span></div>`;
+    document.querySelector('#visual').innerHTML=content;
+    document.querySelectorAll('.motion-trace').forEach(path=>path.style.setProperty('--path-length',path.getTotalLength()));
+    await Promise.all([...document.querySelectorAll('#visual img, #visual image')].map(async image=>{if(image.decode)await image.decode();}));
+    await Promise.all([...document.querySelectorAll('video')].map(v=>new Promise(resolve=>{if(v.readyState>=2)resolve();else v.addEventListener('loadeddata',resolve,{once:true});})));
+    window.sceneReady=true;
+  }
+  async function renderFrame(t,duration,caption) {
+    const visual=document.querySelector('#visual');
+    visual.style.opacity=Math.min(1,t/.45);
+    visual.style.setProperty('--reveal',Math.min(1,Math.max(0,(t-.8)/1.5)));
+    document.querySelector('#subtitle').textContent=caption;
+    document.querySelector('#progress').style.width=`${(currentIndex+t/duration)/sceneCount*100}%`;
+    const animationTime=t*(['acquire','transfer'].includes(currentScene.key)?11:8)/Math.max(1,duration-3);
+    visual.getAnimations({subtree:true}).forEach(animation=>{animation.pause();animation.currentTime=animationTime*1000;});
+    visual.querySelectorAll('.film-point').forEach(point=>point.style.opacity=Math.min(1,Math.max(0,(t-Number(point.dataset.at))/.4)));
+    const line=visual.querySelector('.film-curve');if(line){line.style.strokeDasharray=1;line.style.strokeDashoffset=1-Math.min(1,Math.max(0,(t-.7)/2.4));}
+    await Promise.all([...visual.querySelectorAll('video')].map(v=>new Promise(resolve=>{
+      const next=Math.floor((t%Math.max(.1,v.duration-.125))*8)/8;
+      if(Math.abs(v.currentTime-next)<.005){resolve();return;}
+      v.addEventListener('seeked',resolve,{once:true});v.currentTime=next;
+    })));
+  }
+</script>
+</body></html>

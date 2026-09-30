@@ -201,9 +201,10 @@ function bindMotionTour({ kind, order, tabSelector, buttonSelector, canvasSelect
     seen = true;
     pause(true);
     activate(tab);
-    remaining = null;
+    remaining = duration(keyOf(tab));
     completed = false;
-    replayOnStart = true;
+    replayOnStart = false;
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) play();
   }));
   button.addEventListener('click', () => {
     seen = true;
@@ -422,6 +423,7 @@ function markTableBest(table) {
   });
 }
 function showHorizon(horizon) {
+  horizon = String(horizon);
   const rows = horizonResults[horizon];
   const tbody = $('#horizonTable tbody');
   tbody.replaceChildren();

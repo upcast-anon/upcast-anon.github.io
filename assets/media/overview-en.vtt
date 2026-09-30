@@ -1,0 +1,142 @@
+WEBVTT
+
+00:00:00.602 --> 00:00:01.845
+Meet UPCAST.
+
+00:00:02.536 --> 00:00:07.298
+We learn factorized world transitions for geometry-aware video generation.
+
+00:00:07.987 --> 00:00:12.807
+The idea is simple: learn structure and appearance together, then transfer their
+
+00:00:12.807 --> 00:00:16.293
+benefits into a video backbone that generates on its own.
+
+00:00:18.352 --> 00:00:23.113
+A geometric representation describes the layout and correspondence of a scene.
+
+00:00:23.804 --> 00:00:27.690
+But a future image also needs color, texture, and lighting.
+
+00:00:28.379 --> 00:00:32.850
+We therefore treat geometry and video as complementary learned views of the same
+
+00:00:32.850 --> 00:00:38.179
+RGB observations, rather than asking geometry alone to explain everything.
+
+00:00:40.268 --> 00:00:45.384
+UPCAST learns a shared, discrete physical state, and a private, continuous appearance
+
+00:00:45.384 --> 00:00:46.061
+state.
+
+00:00:46.752 --> 00:00:51.552
+A geometry-anchored codebook gives physical transitions a common vocabulary.
+
+00:00:52.241 --> 00:00:57.274
+Invertible coupling learns how the two states interact to support the visual prediction.
+
+00:00:57.976 --> 00:01:01.462
+Geometry reconstruction reads the physical state alone.
+
+00:01:03.560 --> 00:01:08.946
+During training, PAGE four D supplies geometric features, while DINO and the video
+
+00:01:08.946 --> 00:01:11.221
+backbone supply visual evidence.
+
+00:01:11.912 --> 00:01:17.370
+Video, geometry, and fused physical branches use the same residual quantizer.
+
+00:01:18.059 --> 00:01:20.553
+The appearance path stays continuous.
+
+00:01:21.242 --> 00:01:25.752
+Each branch reconstructs the same future, conditioned on the current anchor and
+
+00:01:25.752 --> 00:01:26.777
+time interval.
+
+00:01:28.852 --> 00:01:33.407
+The difference between fused and video-only physical codes conditions a teacher.
+
+00:01:34.098 --> 00:01:38.247
+Selective distillation transfers lower-error teacher predictions when the training
+
+00:01:38.247 --> 00:01:39.530
+signal is valid.
+
+00:01:40.219 --> 00:01:45.425
+We then refine the student on generated history, preparing the backbone for autoregressive
+
+00:01:45.425 --> 00:01:46.386
+generation.
+
+00:01:48.477 --> 00:01:52.504
+At inference, only the consolidated video backbone remains.
+
+00:01:53.195 --> 00:01:58.472
+The geometry encoder, appearance encoder, codebook, and conditioner are removed.
+
+00:01:59.161 --> 00:02:03.620
+Here are reference and generated videos under matched initial frames and camera
+
+00:02:03.620 --> 00:02:04.709
+trajectories.
+
+00:02:06.768 --> 00:02:12.103
+On one hundred matched sixty-four-frame rollouts, UPCAST reaches an F V D of four
+
+00:02:12.103 --> 00:02:16.672
+hundred ninety-seven point eight, and a JEDi score of three point eight eight.
+
+00:02:17.363 --> 00:02:22.079
+Compared with Geometry Forcing, these are reductions of six point nine and eleven
+
+00:02:22.079 --> 00:02:23.323
+point eight percent.
+
+00:02:24.025 --> 00:02:27.472
+P S N R improves by one point five decibels.
+
+00:02:29.560 --> 00:02:34.708
+A matched training-stage analysis evaluates every checkpoint using only the backbone.
+
+00:02:35.399 --> 00:02:39.987
+Unified-space learning already improves all reported metrics over the original
+
+00:02:39.987 --> 00:02:40.612
+model.
+
+00:02:41.301 --> 00:02:47.171
+Consolidation further improves visual fidelity and JEDi, although F V D increases.
+
+00:02:47.873 --> 00:02:51.334
+Rollout refinement brings a smaller additional improvement.
+
+00:02:53.435 --> 00:02:58.287
+Zero-shot evaluation on ARKitScenes uses sensor-referenced geometry.
+
+00:02:58.991 --> 00:03:04.171
+On twelve matched clips, UPCAST improves depth error and point-cloud recall, while
+
+00:03:04.171 --> 00:03:08.675
+Geometry Forcing retains lower Chamfer distance and higher pose recall.
+
+00:03:09.364 --> 00:03:14.300
+The results reflect complementary geometric and visual priorities, rather than
+
+00:03:14.300 --> 00:03:16.626
+uniform geometric superiority.
+
+00:03:18.685 --> 00:03:23.569
+UPCAST organizes complementary knowledge during training, without adding auxiliary
+
+00:03:23.569 --> 00:03:25.122
+modules at inference.
+
+00:03:25.813 --> 00:03:30.684
+Explore the interactive method, matched videos, complete results, and training
+
+00:03:30.684 --> 00:03:32.830
+analysis on our project page.

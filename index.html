@@ -6,10 +6,12 @@
   <meta name="theme-color" content="#152522">
   <meta name="description" content="UPCAST learns factorized world transitions for geometry-aware video generation. Explore the method, matched 64-frame rollouts, and geometric evaluation.">
   <title>UPCAST | Factorized World Transitions</title>
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon.svg?v=2" type="image/svg+xml">
   <link rel="preload" href="assets/media/hero.jpg" as="image">
   <link rel="stylesheet" href="assets/site.css">
   <link rel="stylesheet" href="assets/motion.css">
+  <link rel="stylesheet" href="assets/presentation.css">
+  <script src="assets/theme.js"></script>
 </head>
 <body>
   <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -25,15 +27,16 @@
 
   <header class="site-header" id="top">
     <div class="header-inner content-width">
-      <a class="brand" href="#top" aria-label="UPCAST home"><svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 7h8l5 7M3 21h8l5-7" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 14h6" fill="none" stroke-width="3.4" stroke-linecap="round"/><rect x="21" y="10.5" width="5" height="7" rx="1"/></svg>UPCAST</a>
+      <a class="brand" href="#top" aria-label="UPCAST home"><img class="brand-mark" src="assets/favicon.svg" alt="" width="27" height="27">UPCAST</a>
       <nav class="desktop-nav" aria-label="Primary navigation">
-        <a href="#idea">Idea</a><a href="#explore">Videos</a><a href="#method">Method</a><a href="#geometry">Geometry</a><a href="#results">Results</a><a href="#evidence">Evidence</a><a href="#resources">Models & Data</a>
+        <a href="#idea">Idea</a><a href="#explore">Videos</a><a href="#method">Method</a><a href="#geometry">Geometry</a><a href="#results">Results</a><a href="#evidence">Evidence</a><a href="#release">Resources</a>
       </nav>
+      <button class="icon-button theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" title="Switch color theme"><i data-lucide="moon" aria-hidden="true"></i></button>
       <button class="menu-toggle icon-button" id="menuToggle" type="button" aria-label="Open navigation" aria-expanded="false"><svg class="icon"><use href="#icon-menu"/></svg></button>
     </div>
   </header>
   <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation" hidden>
-    <a href="#idea">Idea</a><a href="#explore">Videos</a><a href="#method">Method</a><a href="#geometry">Geometry</a><a href="#results">Results</a><a href="#evidence">Evidence</a><a href="#resources">Models & Data</a>
+    <a href="#idea">Idea</a><a href="#explore">Videos</a><a href="#method">Method</a><a href="#geometry">Geometry</a><a href="#results">Results</a><a href="#evidence">Evidence</a><a href="#release">Resources</a>
   </nav>
 
   <main>
@@ -47,7 +50,7 @@
         <p class="hero-summary">Learn structure and appearance together; generate with the video backbone alone.</p>
         <div class="hero-links">
           <a class="button button-light" href="#explore">Explore rollouts <svg class="icon"><use href="#icon-arrow"/></svg></a>
-          <a class="button button-outline" href="#method">See the method <svg class="icon"><use href="#icon-arrow"/></svg></a>
+          <a class="button button-outline" href="#film"><i data-lucide="circle-play" aria-hidden="true"></i> Watch overview</a>
         </div>
       </div>
       <div class="hero-bottom content-width"><span>REAL ESTATE10K · 64-FRAME GENERATED ROLLOUT</span><a href="#idea" aria-label="Scroll to the idea"><svg class="icon"><use href="#icon-down"/></svg></a><span>CAMERA-CONDITIONED VIDEO</span></div>
@@ -59,6 +62,14 @@
         <div class="metric"><strong>3.88</strong><span>JEDi <em>↓</em></span><small>vs. 4.40 Geometry Forcing</small></div>
         <div class="metric"><strong>64</strong><span>frames</span><small>4× training clip length</small></div>
         <div class="metric"><strong>13.94</strong><span>PSNR <em>↑</em></span><small>vs. 12.44 Geometry Forcing</small></div>
+      </div>
+    </section>
+
+    <section class="section film-section" id="film" aria-labelledby="film-title">
+      <div class="content-width">
+        <div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> Research overview</p><h2 id="film-title">Inside UPCAST.</h2></div><p>From complementary visual evidence to factorized transitions and a standalone video backbone.</p></div>
+        <video id="overviewFilm" class="overview-film" controls playsinline preload="none" poster="assets/media/overview-poster.jpg" aria-label="UPCAST narrated research overview"><source src="assets/media/upcast-overview.mp4" type="video/mp4"><track kind="captions" src="assets/media/overview-en.vtt" srclang="en" label="English"></video>
+        <div class="film-chapters" aria-label="Video chapters"><button type="button" data-film-chapter="0">Overview</button><button type="button" data-film-chapter="1">Why factorize?</button><button type="button" data-film-chapter="3">How it learns</button><button type="button" data-film-chapter="6">Results</button></div>
       </div>
     </section>
 
@@ -84,7 +95,7 @@
 
     <section class="section explorer-section" id="explore" aria-labelledby="explore-title">
       <div class="content-width">
-        <div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 02 / Generated videos</p><h2 id="explore-title">Follow the same camera path.</h2></div><p>Reference and generated rollouts share the initial frame, camera trajectory, and sampling seed. The scenes below span distinct indoor layouts.</p></div>
+        <div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 02 / Generated videos</p><h2 id="explore-title">Follow the same camera path.</h2></div><p>Reference and generated videos share the initial frame and camera trajectory. Generated methods use matched sampling seeds across distinct indoor layouts.</p></div>
         <div class="scene-picks" role="group" aria-label="Choose a scene">
           <button class="scene-pick active" type="button" aria-pressed="true" data-scene="stairwell"><img src="assets/media/stairwell-upcast.jpg" alt=""><span>Stairwell</span></button>
           <button class="scene-pick" type="button" aria-pressed="false" data-scene="bathroom"><img src="assets/media/bathroom-upcast.jpg" alt=""><span>Bathroom</span></button>
@@ -156,7 +167,7 @@
       </div>
     </section>
 
-    <section class="section results-section" id="results" aria-labelledby="results-title"><div class="content-width"><div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 05 / Main results</p><h2 id="results-title">Measured on matched rollouts.</h2></div><p>Camera-conditioned RealEstate10K evaluation with shared initial frames, camera trajectories, and sampling seeds.</p></div><div class="results-lead" aria-label="64-frame primary result compared with Geometry Forcing"><div class="results-lead-summary"><span>64-FRAME PRIMARY TEST</span><strong>5 of 7</strong><p>best reported metrics</p></div><div class="results-lead-metric"><span>FVD ↓</span><strong>497.8 <small>vs. 534.9</small></strong><em>6.9% lower</em></div><div class="results-lead-metric"><span>JEDi ↓</span><strong>3.88 <small>vs. 4.40</small></strong><em>11.8% lower</em></div><div class="results-lead-metric"><span>PSNR ↑</span><strong>13.94 <small>vs. 12.44</small></strong><em>+1.50 dB</em></div></div><div class="result-tabs" role="tablist" aria-label="Rollout horizon"><button class="active" type="button" role="tab" aria-selected="true" data-horizon="64">64 frames <small>Primary · 100 videos</small></button><button type="button" role="tab" aria-selected="false" data-horizon="128">128 frames <small>Stress · 12 videos</small></button><button type="button" role="tab" aria-selected="false" data-horizon="256">256 frames <small>Stress · 12 videos</small></button></div><div class="results-table-wrap"><table class="results-table" id="horizonTable"><caption id="horizonCaption">64-frame rollouts · 100 matched videos</caption><thead><tr><th scope="col">Method</th><th scope="col">FVD ↓</th><th scope="col">FID ↓</th><th scope="col">LPIPS ↓</th><th scope="col">SSIM ↑</th><th scope="col">PSNR ↑</th><th scope="col">JEDi ↓</th><th scope="col">RPE ↓</th></tr></thead><tbody></tbody></table></div><p class="results-note" id="horizonNote">RPE uses the first 12 primary-test videos; other columns use all 100.</p></div></section>
+    <section class="section results-section" id="results" aria-labelledby="results-title"><div class="content-width"><div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 05 / Main results</p><h2 id="results-title">Measured on matched rollouts.</h2></div><p>Camera-conditioned RealEstate10K evaluation with shared initial frames, camera trajectories, and sampling seeds.</p></div><p class="result-context">64-frame RealEstate10K · UPCAST compared with Geometry Forcing</p><div class="results-lead" aria-label="64-frame primary result compared with Geometry Forcing"><div class="results-lead-metric"><span>FVD ↓</span><strong>497.8 <small>vs. 534.9</small></strong><em>6.9% lower</em></div><div class="results-lead-metric"><span>JEDi ↓</span><strong>3.88 <small>vs. 4.40</small></strong><em>11.8% lower</em></div><div class="results-lead-metric"><span>PSNR ↑</span><strong>13.94 <small>vs. 12.44</small></strong><em>+1.50 dB</em></div></div><div class="result-tabs" role="tablist" aria-label="Rollout horizon"><button class="active" type="button" role="tab" aria-selected="true" data-horizon="64">64 frames <small>Primary · 100 videos</small></button><button type="button" role="tab" aria-selected="false" data-horizon="128">128 frames <small>Stress · 12 videos</small></button><button type="button" role="tab" aria-selected="false" data-horizon="256">256 frames <small>Stress · 12 videos</small></button></div><div class="results-table-wrap"><table class="results-table" id="horizonTable"><caption id="horizonCaption">64-frame rollouts · 100 matched videos</caption><thead><tr><th scope="col">Method</th><th scope="col">FVD ↓</th><th scope="col">FID ↓</th><th scope="col">LPIPS ↓</th><th scope="col">SSIM ↑</th><th scope="col">PSNR ↑</th><th scope="col">JEDi ↓</th><th scope="col">RPE ↓</th></tr></thead><tbody></tbody></table></div><p class="results-note" id="horizonNote">RPE uses the first 12 primary-test videos; other columns use all 100.</p></div></section>
 
     <section class="section evidence-section" id="evidence" aria-labelledby="evidence-title"><div class="content-width">
       <div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 06 / What changes</p><h2 id="evidence-title">The gains survive the handoff.</h2></div><p>One checkpoint lineage separates transition-space learning, backbone consolidation, and generated-history refinement. Every row is evaluated through the backbone alone.</p></div>
@@ -167,15 +178,27 @@
       <details class="complete-metrics action-metrics"><summary>Complete action-conditioned results <svg class="icon"><use href="#icon-down"/></svg></summary><div class="results-table-wrap"><table class="results-table"><thead><tr><th>Method</th><th>FVD ↓</th><th>FID ↓</th><th>LPIPS ↓</th><th>SSIM ↑</th><th>PSNR ↑</th><th>Action BAcc. ↑</th><th>Response ↑</th></tr></thead><tbody><tr><th>Action-DFoT</th><td>245.0</td><td>39.51</td><td>0.431</td><td>0.524</td><td>15.83</td><td>85.10%</td><td>86.89%</td></tr><tr class="ours-row"><th>+ UPCAST</th><td>221.7</td><td>37.55</td><td>0.424</td><td>0.528</td><td>15.97</td><td>85.35%</td><td>89.78%</td></tr></tbody></table></div><p>DFoT Minecraft quickstart: 10 training and 10 validation trajectories, 100 matched 16-frame videos. Both variants use backbone-only inference.</p></details>
     </div></section>
 
-    <section class="section resources-section" id="resources" aria-labelledby="resources-title"><div class="content-width"><div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 07 / Models & data</p><h2 id="resources-title">What enters training and deployment.</h2></div><p>Frozen foundation features help shape the transition space. At generation time, the camera- or action-conditioned DFoT backbone is the only model retained.</p></div><div class="resource-grid"><div class="resource-group"><span>TRAINING-TIME SIGNALS</span><dl><div><dt>PAGE-4D</dt><dd>Geometry features and point maps</dd></div><div><dt>DINOv2</dt><dd>Visual-semantic features</dd></div><div><dt>V-JEPA</dt><dd>Spatiotemporal predictive regularization</dd></div><div><dt>Shared RVQ + private path</dt><dd>Factorized transition learning</dd></div></dl></div><div class="resource-group"><span>DEPLOYMENT & EVALUATION</span><dl><div><dt>DFoT</dt><dd>Standalone RGB rollout backbone</dd></div><div><dt>RealEstate10K</dt><dd>Camera-conditioned primary and long-horizon tests</dd></div><div><dt>ARKitScenes</dt><dd>Zero-shot sensor-referenced evaluation</dd></div><div><dt>Minecraft quickstart</dt><dd>Action-conditioned extension</dd></div></dl></div></div></div></section>
+    <section class="section release-section" id="release" aria-labelledby="release-title">
+      <div class="content-width">
+        <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span> Resources</p><h2 id="release-title">Code & checkpoints.</h2></div>
+        <div class="release-grid">
+          <article><i data-lucide="code-2" aria-hidden="true"></i><h3>Training & inference</h3><p>Factorized transition learning, consolidation, and backbone-only rollouts.</p><span class="release-status">Code release pending</span></article>
+          <article><i data-lucide="box" aria-hidden="true"></i><h3>Model checkpoints</h3><p>Trained video backbone and the auxiliary transition modules.</p><span class="release-status">Checkpoints pending</span></article>
+          <article><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i><h3>Evaluation</h3><p>Matched video evaluation and sensor-referenced geometry protocols.</p><span class="release-status">Evaluation code pending</span></article>
+        </div>
+      </div>
+    </section>
+    <section class="section resources-section" id="resources" aria-labelledby="resources-title"><div class="content-width"><div class="section-heading two-column-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> 07 / Models & data</p><h2 id="resources-title">What enters training and deployment.</h2></div><p>UPCAST stands for Unified Physical and Complementary Appearance State Transitions. Frozen foundation features shape the training space; only the camera- or action-conditioned DFoT backbone remains at generation time.</p></div><div class="resource-grid"><div class="resource-group"><span>TRAINING-TIME SIGNALS</span><dl><div><dt>PAGE-4D</dt><dd>Geometry features and point maps</dd></div><div><dt>DINOv2</dt><dd>Visual-semantic features</dd></div><div><dt>V-JEPA</dt><dd>Spatiotemporal predictive regularization</dd></div><div><dt>Shared RVQ + private path</dt><dd>Factorized transition learning</dd></div></dl></div><div class="resource-group"><span>DEPLOYMENT & EVALUATION</span><dl><div><dt>DFoT</dt><dd>Standalone RGB rollout backbone</dd></div><div><dt>RealEstate10K</dt><dd>Camera-conditioned primary and long-horizon tests</dd></div><div><dt>ARKitScenes</dt><dd>Zero-shot sensor-referenced evaluation</dd></div><div><dt>Minecraft quickstart</dt><dd>Action-conditioned extension</dd></div></dl></div></div></div></section>
   </main>
-  <footer class="site-footer"><div class="content-width"><a class="brand" href="#top"><svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 7h8l5 7M3 21h8l5-7" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 14h6" fill="none" stroke-width="3.4" stroke-linecap="round"/><rect x="21" y="10.5" width="5" height="7" rx="1"/></svg>UPCAST</a><p>Learning Factorized World Transitions for Geometry-Aware Video World Models</p><a href="#top">Back to top ↑</a></div></footer>
+  <footer class="site-footer"><div class="content-width"><a class="brand" href="#top"><img class="brand-mark" src="assets/favicon.svg" alt="" width="27" height="27">UPCAST</a><p>Learning Factorized World Transitions for Geometry-Aware Video World Models</p><a href="#top">Back to top ↑</a></div></footer>
 
   <dialog class="figure-dialog" id="figureDialog" aria-label="Enlarged paper figure"><button class="icon-button dialog-close" id="figureClose" type="button" aria-label="Close figure"><svg class="icon"><use href="#icon-close"/></svg></button><img id="figureDialogImage" alt=""></dialog>
   <script src="assets/data/curves.js" defer></script>
   <script src="assets/data/geometry.js" defer></script>
+  <script src="assets/data/film-chapters.js" defer></script>
   <script src="assets/lucide.min.js" defer></script>
-  <script src="assets/motion.js" defer></script>
+  <script src="assets/storyboard.js" defer></script>
   <script src="assets/site.js" defer></script>
+  <script src="assets/presentation.js" defer></script>
 </body>
 </html>
