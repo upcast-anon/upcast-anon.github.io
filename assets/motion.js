@@ -13,9 +13,10 @@ const UpcastMotion = (() => {
     return `<g class="motion-rise" style="--delay:${delay}s"><path d="M${x} ${y + d}l${d} -${d}h${size}l-${d} ${d}Z" fill="${c[2]}" stroke="${c[3]}" stroke-width="1.5"/><path d="M${x + size} ${y + d}l${d} -${d}v${size}l-${d} ${d}Z" fill="${c[1]}" stroke="${c[3]}" stroke-width="1.5"/><rect x="${x}" y="${y + d}" width="${size}" height="${size}" fill="${c[0]}" stroke="${c[3]}" stroke-width="1.5"/>${lines}<text x="${x + size / 2}" y="${y + size + d + 29}" text-anchor="middle" class="motion-math" fill="${c[3]}">${label}</text></g>`;
   };
   const trace = (d, color, delay = 0, width = 2.7, dashed = false) => {
-    return `<path class="motion-trace${dashed ? ' dashed' : ''}" style="--delay:${delay}s" d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const line = `<path class="motion-trace${dashed ? ' dashed' : ''}" style="--delay:${delay}s" d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    return dashed ? `${line}<path class="motion-dashed-final" d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-dasharray="10 7" stroke-linecap="round"/>` : line;
   };
-  const label = (x, y, content, color = colors.ink, extra = '') => `<text x="${x}" y="${y}" fill="${color}" class="motion-label ${extra}">${content}</text>`;
+  const label = (x, y, content, color = colors.ink, extra = '', delay = 0) => `<text x="${x}" y="${y}" style="fill:${color};--delay:${delay}s" class="motion-label ${extra}">${content}</text>`;
   const box = (x, y, w, h, title, sub, tone, delay = 0) => `<g class="motion-rise" style="--delay:${delay}s"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="var(--${tone}-pale)" stroke="var(--${tone})" stroke-width="2"/><text x="${x + w / 2}" y="${y + 30}" text-anchor="middle" class="motion-box-title" fill="var(--${tone})">${title}</text>${sub ? `<text x="${x + w / 2}" y="${y + (title.includes('<tspan') ? h >= 80 ? 64 : 55 : 51)}" text-anchor="middle" class="motion-box-sub">${sub}</text>` : ''}</g>`;
   const tokens = (x, y, count, tone, delay = 0, rows = 1) => {
     const columns = Math.ceil(count / rows);
@@ -26,13 +27,11 @@ const UpcastMotion = (() => {
     }).join('');
     return `<g>${cells}</g>`;
   };
-  const root = (content, wide = false, title = '') => `<svg class="motion-svg" viewBox="0 0 ${wide ? 1100 : 900} ${wide ? 420 : 470}" role="img" aria-label="${title}" xmlns="http://www.w3.org/2000/svg"><defs>
-      <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8Z" fill="${colors.blue}"/></marker>
-      <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8Z" fill="${colors.green}"/></marker>
-      <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8Z" fill="${colors.orange}"/></marker>
-      <marker id="arrow-purple" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8Z" fill="${colors.purple}"/></marker>
-      <marker id="arrow-gold" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8Z" fill="${colors.gold}"/></marker>
-    </defs>${content}</svg>`;
+  const root = (content, wide = false, title = '') => `<svg class="motion-svg" viewBox="0 0 ${wide ? 1100 : 900} ${wide ? 420 : 470}" role="img" aria-label="${title}" xmlns="http://www.w3.org/2000/svg">${content}</svg>`;
+  const durations = {
+    idea: { alignment: 3.9, factorized: 4.8, generation: 4.9 },
+    method: { acquire: 5.85, transfer: 5.0, deploy: 5.0 }
+  };
 
   const idea = {
     alignment: () => root(`
@@ -43,8 +42,8 @@ const UpcastMotion = (() => {
       <path d="M214 170v159" stroke="#a9b9b6" stroke-width="1.7" fill="none" class="motion-rise" style="--delay:.45s"/>
       ${trace('M215 248H310C362 248 356 143 445 143H558', colors.green, .75)}
       ${trace('M215 248H310C362 248 356 330 445 330H558', colors.blue, 1.1)}
-      ${label(369, 102, 'STRUCTURE', colors.green, 'motion-kicker motion-rise')}
-      ${label(369, 399, 'VISUAL DETAIL', colors.blue, 'motion-kicker motion-rise')}
+      ${label(369, 102, 'STRUCTURE', colors.green, 'motion-kicker motion-rise', .8)}
+      ${label(369, 399, 'VISUAL DETAIL', colors.blue, 'motion-kicker motion-rise', 1.15)}
       ${cube(595, 94, 91, 'green', 'Z<tspan baseline-shift="sub" font-size="16">g</tspan>', 1.55)}
       ${cube(595, 280, 91, 'blue', 'H<tspan baseline-shift="sub" font-size="16">θ</tspan>', 1.85)}
       <g class="motion-rise" style="--delay:2.45s"><line x1="749" y1="95" x2="749" y2="391" stroke="#d9e3df" stroke-width="1.4"/><text x="778" y="216" class="motion-small">Same scene,</text><text x="778" y="239" class="motion-small">different</text><text x="778" y="262" class="motion-small">predictive roles</text></g>`, false, 'The same observed frame pair feeds a geometry view and a visual representation.'),
@@ -61,12 +60,12 @@ const UpcastMotion = (() => {
       ${tokens(283, 158, 6, 'green', 1.2, 1)}
       <g class="motion-rise" style="--delay:1.2s"><rect x="267" y="307" width="238" height="70" rx="4" fill="#fcf1e7" stroke="#e2c09e"/><text x="283" y="331" class="motion-small" fill="${colors.orange}">Continuous path</text></g>
       ${tokens(283, 344, 6, 'orange', 1.45, 1)}
-      ${label(522, 175, 'Q', colors.green, 'motion-symbol motion-rise')}
-      ${label(522, 365, 'A', colors.orange, 'motion-symbol motion-rise')}
+      ${label(522, 175, 'Q', colors.green, 'motion-symbol motion-rise', 1.62)}
+      ${label(522, 365, 'A', colors.orange, 'motion-symbol motion-rise', 1.82)}
       ${trace('M547 168C596 168 575 226 627 226H674', colors.green, 2.0)}
       ${trace('M547 357C596 357 575 273 627 273H674', colors.orange, 2.25)}
-      ${box(681, 198, 123, 105, 'U', 'coupled state', 'gold', 2.65)}
-      ${label(688, 336, 'invertible additive coupling', '#82908a', 'motion-small motion-rise')}`, false, 'Geometry and video inform a shared physical code Q; video also informs private appearance A; coupling gives visual state U.'),
+      ${box(681, 198, 123, 105, 'U', 'coupled state', 'gold', 3.0)}
+      ${label(688, 336, 'invertible additive coupling', '#82908a', 'motion-small motion-rise', 3.34)}`, false, 'Geometry and video inform a shared physical code Q; video also informs private appearance A; coupling gives visual state U.'),
     generation: () => root(`
       ${label(45, 55, 'DEPLOYMENT PATH', '#70817e', 'motion-kicker')}
       ${frame(70, 175, 118, 'method-frame-i.jpg', 'input xᵢ', .1)}
@@ -102,14 +101,14 @@ const UpcastMotion = (() => {
       ${box(650, 102, 130, 132, 'RVQ', 'shared across v/g/f', 'green', 2.31)}
       ${tokens(665, 176, 4, 'green', 2.56)}
       ${trace('M495 344H580C651 344 654 289 771 289H799', colors.orange, 2.16)}
-      ${label(644, 331, 'A_f', colors.orange, 'motion-small motion-rise')}
+      ${label(644, 331, 'A_f', colors.orange, 'motion-small motion-rise', 2.65)}
       ${trace('M780 170C807 170 792 248 799 248', colors.green, 2.7)}
-      ${box(806, 225, 92, 91, 'U<tspan baseline-shift="sub" font-size="16">m</tspan>', 'coupling', 'gold', 2.98)}
+      ${box(806, 225, 92, 91, 'U<tspan baseline-shift="sub" font-size="16">m</tspan>', 'coupling', 'gold', 3.1)}
       ${trace('M898 269H925', colors.gold, 3.23)}
-      ${box(932, 224, 142, 92, 'D<tspan baseline-shift="sub" font-size="16">v</tspan>', 'visual future', 'blue', 3.44)}
+      ${box(932, 224, 142, 92, 'D<tspan baseline-shift="sub" font-size="16">v</tspan>', 'visual future', 'blue', 3.58)}
       ${trace('M780 170C830 170 822 112 925 112', colors.green, 3.36)}
-      ${box(932, 70, 142, 82, 'D<tspan baseline-shift="sub" font-size="16">g</tspan>', 'geometry future', 'green', 3.58)}
-      <text x="770" y="395" text-anchor="middle" fill="#61716e" class="motion-small motion-rise">Shared Q feeds geometry; coupled U feeds visual reconstruction</text>`, true, 'Paired frames provide video and geometry transitions; a fused physical path enters the shared RVQ while video and visual features form continuous appearance. Geometry reads Q; visual reconstruction reads coupled U.'),
+      ${box(932, 70, 142, 82, 'D<tspan baseline-shift="sub" font-size="16">g</tspan>', 'geometry future', 'green', 3.9)}
+      <text x="770" y="395" text-anchor="middle" fill="#61716e" class="motion-small motion-rise" style="--delay:4.3s">Shared Q feeds geometry; coupled U feeds visual reconstruction</text>`, true, 'Paired frames provide video and geometry transitions; a fused physical path enters the shared RVQ while video and visual features form continuous appearance. Geometry reads Q; visual reconstruction reads coupled U.'),
     transfer: () => root(`
       ${label(35, 47, 'PAIRED PHYSICAL CODES', '#71817f', 'motion-kicker')}
       ${cube(57, 122, 76, 'green', 'Q<tspan baseline-shift="sub" font-size="16">v</tspan>', .12)}
@@ -165,6 +164,14 @@ const UpcastMotion = (() => {
     const svg = canvas.querySelector('svg');
     svg.querySelectorAll('.motion-trace').forEach((path) => {
       const length = path.getTotalLength();
+      const duration = Math.min(.8, Math.max(.32, length / 270));
+      const delay = parseFloat(path.style.getPropertyValue('--delay'));
+      path.style.setProperty('--path-length', `${length.toFixed(2)}`);
+      path.style.setProperty('--draw-duration', `${duration.toFixed(3)}s`);
+      if (path.classList.contains('dashed')) {
+        path.style.setProperty('--fade-delay', `${(delay + duration).toFixed(3)}s`);
+        path.nextElementSibling.style.setProperty('--delay', `${(delay + duration).toFixed(3)}s`);
+      }
       const end = path.getPointAtLength(length);
       const before = path.getPointAtLength(Math.max(0, length - 9));
       const angle = Math.atan2(end.y - before.y, end.x - before.x) * 180 / Math.PI;
@@ -173,7 +180,7 @@ const UpcastMotion = (() => {
       arrow.setAttribute('transform', `translate(${end.x} ${end.y}) rotate(${angle})`);
       arrow.setAttribute('fill', path.getAttribute('stroke'));
       arrow.setAttribute('class', 'motion-arrow-arrive');
-      arrow.style.setProperty('--delay', `${parseFloat(path.style.getPropertyValue('--delay')) + .93}s`);
+      arrow.style.setProperty('--delay', `${(delay + duration - .03).toFixed(3)}s`);
       svg.append(arrow);
     });
   }
@@ -188,8 +195,14 @@ const UpcastMotion = (() => {
       art.append(parts.viewport, parts.controls);
       art.classList.add('is-enhanced');
       lucide.createIcons();
+    } else {
+      const fresh = canvas.cloneNode(false);
+      fresh.classList.remove('is-paused');
+      canvas.replaceWith(fresh);
+      canvas = fresh;
     }
     canvas.innerHTML = idea[key]();
+    canvas.style.setProperty('--sequence-duration', `${durations.idea[key]}s`);
     decorateArrows(canvas);
     canvas.parentElement.scrollLeft = 0;
   }
@@ -204,10 +217,16 @@ const UpcastMotion = (() => {
       legacy.before(parts.viewport, parts.controls);
       panel.classList.add('is-enhanced');
       lucide.createIcons();
+    } else {
+      const fresh = canvas.cloneNode(false);
+      fresh.classList.remove('is-paused');
+      canvas.replaceWith(fresh);
+      canvas = fresh;
     }
     canvas.innerHTML = method[key]();
+    canvas.style.setProperty('--sequence-duration', `${durations.method[key]}s`);
     decorateArrows(canvas);
     canvas.parentElement.scrollLeft = 0;
   }
-  return { mountIdea, mountMethod };
+  return { mountIdea, mountMethod, duration: (kind, key) => durations[kind][key] };
 })();

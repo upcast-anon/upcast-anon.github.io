@@ -137,6 +137,47 @@ def test_page(browser, width: int, height: int) -> None:
     page.close()
 
 
+def test_motion_timing(browser) -> None:
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(URL, wait_until="load")
+    page.locator('[data-idea="factorized"]').click()
+    assert page.locator('.idea-motion .motion-trace').first.evaluate(
+        "e => Math.abs(parseFloat(getComputedStyle(e).strokeDasharray) - e.getTotalLength()) < 1"
+    )
+    page.evaluate("window.previousCanvas = document.querySelector('.idea-motion')")
+    page.locator('[data-idea="generation"]').click()
+    assert page.evaluate("!window.previousCanvas.isConnected")
+    assert page.locator('.idea-motion').evaluate(
+        "e => new DOMMatrix(getComputedStyle(e, '::after').transform).a < .25"
+    )
+    page.locator('[data-idea="factorized"]').click()
+    page.locator('#ideaAuto').click()
+    page.wait_for_timeout(650)
+    page.locator('#ideaAuto').click()
+    page.wait_for_timeout(80)
+    frozen = page.locator('.idea-motion').evaluate(
+        "e => e.getAnimations({subtree:true}).filter(a => a.playState === 'paused').map(a => a.currentTime)"
+    )
+    assert frozen
+    page.wait_for_timeout(500)
+    resumed = page.locator('.idea-motion').evaluate(
+        "e => e.getAnimations({subtree:true}).filter(a => a.playState === 'paused').map(a => a.currentTime)"
+    )
+    assert len(frozen) == len(resumed)
+    assert max(abs(before - after) for before, after in zip(frozen, resumed)) < 2
+    page.locator('#ideaAuto').click()
+    page.wait_for_function("document.querySelector('[data-idea=generation]').classList.contains('active')", timeout=7000)
+    page.locator('[data-method="transfer"]').click()
+    page.wait_for_timeout(3900)
+    assert page.locator('[data-method-panel="transfer"] .motion-trace.dashed').first.evaluate(
+        "e => getComputedStyle(e).opacity === '0' && getComputedStyle(e.nextElementSibling).opacity === '1'"
+    )
+    assert not errors, errors
+    page.close()
+
+
 if __name__ == "__main__":
     with sync_playwright() as playwright:
         launch_options = {"headless": True, "args": ["--no-sandbox"]}
@@ -155,4 +196,6 @@ if __name__ == "__main__":
         )
         reduced.close()
         print("OK reduced motion")
+        test_motion_timing(browser)
+        print("OK motion timing")
         browser.close()

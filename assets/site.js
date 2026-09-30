@@ -85,21 +85,11 @@ const ideaSteps = {
   generation: { image: 'intro-generation.png', alt: 'The trained DFoT backbone rolls out RGB video without auxiliary modules.', number: '03 / THE DEPLOYMENT', title: 'The video model stands on its own.', text: 'Training-time representations improve the original backbone. At inference, the model takes an input frame and controls and rolls out RGB video without the auxiliary pathways.', key: 'Training-time knowledge · backbone-only inference' }
 };
 const ideaOrder = ['alignment', 'factorized', 'generation'];
-let ideaTimer = null;
-let ideaTourSeen = false;
 function setMotionPlayback(selector, playing) {
   const canvas = $(selector);
   if (!canvas) return;
   canvas.classList.toggle('is-paused', !playing);
   canvas.getAnimations({ subtree: true }).forEach((animation) => { if (playing) animation.play(); else animation.pause(); });
-}
-function stopIdeaTour() {
-  clearInterval(ideaTimer);
-  ideaTimer = null;
-  setMotionPlayback('#ideaPanelArt .motion-canvas', false);
-  $('#ideaAuto').innerHTML = icon('play');
-  $('#ideaAuto').setAttribute('aria-label', 'Play guided walkthrough');
-  lucide.createIcons();
 }
 function activateIdea(button) {
   const step = ideaSteps[button.dataset.idea];
@@ -112,37 +102,6 @@ function activateIdea(button) {
   $('#ideaPanelKey').textContent = step.key;
   $('#ideaProgress').textContent = `${String(ideaOrder.indexOf(button.dataset.idea) + 1).padStart(2, '0')} / 03`;
   $$('[data-idea]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-selected', String(tab === button)); });
-}
-$$('[data-idea]').forEach((button) => button.addEventListener('click', () => { ideaTourSeen = true; stopIdeaTour(); activateIdea(button); }));
-function startIdeaTour() {
-  if (ideaTimer) return;
-  if ($('[data-idea="generation"]').classList.contains('active')) activateIdea($('[data-idea="alignment"]'));
-  setMotionPlayback('#ideaPanelArt .motion-canvas', true);
-  $('#ideaAuto').innerHTML = icon('pause');
-  $('#ideaAuto').setAttribute('aria-label', 'Pause guided walkthrough');
-  lucide.createIcons();
-  ideaTimer = setInterval(() => {
-    const current = ideaOrder.findIndex((key) => $(`[data-idea="${key}"]`).classList.contains('active'));
-    if (current === ideaOrder.length - 1) { stopIdeaTour(); return; }
-    activateIdea($(`[data-idea="${ideaOrder[current + 1]}"]`));
-  }, 5500);
-}
-$('#ideaAuto').addEventListener('click', () => {
-  ideaTourSeen = true;
-  if (ideaTimer) stopIdeaTour();
-  else startIdeaTour();
-});
-if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  const ideaObserver = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && !ideaTourSeen) {
-      ideaTourSeen = true;
-      activateIdea($('[data-idea="alignment"]'));
-      startIdeaTour();
-    } else if (!entries[0].isIntersecting && ideaTimer) stopIdeaTour();
-  }, { threshold: .28 });
-  ideaObserver.observe($('#ideaPanel'));
-} else {
-  UpcastMotion.mountIdea('alignment');
 }
 
 const compareVideos = [$('#compareRef'), $('#compareOurs'), $('#compareGF')];
@@ -169,53 +128,110 @@ $$('.scene-pick').forEach((button) => button.addEventListener('click', () => {
   $('#compareFrame').textContent = 'FRAME 01 / 64';
 }));
 const methodOrder = ['acquire', 'transfer', 'deploy'];
-let methodTimer = null;
-let methodTourSeen = false;
-function stopMethodTour() {
-  clearInterval(methodTimer);
-  methodTimer = null;
-  setMotionPlayback('[data-method-panel]:not([hidden]) .motion-canvas', false);
-  $('#methodAuto').innerHTML = icon('play');
-  $('#methodAuto').setAttribute('aria-label', 'Play method walkthrough');
-  lucide.createIcons();
-}
 function activateMethod(button) {
   $$('[data-method]').forEach((tab) => { tab.classList.toggle('active', tab === button); tab.setAttribute('aria-selected', String(tab === button)); });
   $$('[data-method-panel]').forEach((panel) => { panel.hidden = panel.dataset.methodPanel !== button.dataset.method; });
   $('#methodProgress').textContent = `${String(methodOrder.indexOf(button.dataset.method) + 1).padStart(2, '0')} / 03`;
   UpcastMotion.mountMethod(button.dataset.method);
 }
-function startMethodTour() {
-  if (methodTimer) return;
-  if ($('[data-method="deploy"]').classList.contains('active')) activateMethod($('[data-method="acquire"]'));
-  setMotionPlayback('[data-method-panel]:not([hidden]) .motion-canvas', true);
-  $('#methodAuto').innerHTML = icon('pause');
-  $('#methodAuto').setAttribute('aria-label', 'Pause method walkthrough');
-  lucide.createIcons();
-  methodTimer = setInterval(() => {
-    const current = methodOrder.findIndex((key) => $(`[data-method="${key}"]`).classList.contains('active'));
-    if (current === methodOrder.length - 1) { stopMethodTour(); return; }
-    activateMethod($(`[data-method="${methodOrder[current + 1]}"]`));
-  }, 5500);
+function bindMotionTour({ kind, order, tabSelector, buttonSelector, canvasSelector, observerSelector, threshold, activate }) {
+  const button = $(buttonSelector);
+  const keyOf = (tab) => tab.dataset[kind === 'idea' ? 'idea' : 'method'];
+  const currentTab = () => $(`${tabSelector}.active`);
+  const duration = (key) => UpcastMotion.duration(kind, key) * 1000;
+  let timer = null;
+  let deadline = 0;
+  let remaining = null;
+  let seen = false;
+  let userStopped = false;
+  let completed = false;
+  let replayOnStart = false;
+
+  const setButton = (playing) => {
+    button.innerHTML = icon(playing ? 'pause' : 'play');
+    button.setAttribute('aria-label', `${playing ? 'Pause' : 'Play'} ${kind === 'idea' ? 'guided' : 'method'} walkthrough`);
+    lucide.createIcons();
+  };
+  const pause = (manual = false) => {
+    if (timer) {
+      remaining = Math.max(0, deadline - performance.now());
+      clearTimeout(timer);
+      timer = null;
+    }
+    setMotionPlayback(canvasSelector, false);
+    if (manual) userStopped = true;
+    setButton(false);
+  };
+  const schedule = () => {
+    setMotionPlayback(canvasSelector, true);
+    setButton(true);
+    deadline = performance.now() + remaining;
+    timer = setTimeout(() => {
+      timer = null;
+      remaining = null;
+      const index = order.indexOf(keyOf(currentTab()));
+      if (index === order.length - 1) {
+        completed = true;
+        pause();
+        return;
+      }
+      const next = $(`${tabSelector}[data-${kind}="${order[index + 1]}"]`);
+      activate(next);
+      remaining = duration(order[index + 1]);
+      schedule();
+    }, remaining);
+  };
+  const play = () => {
+    if (timer) return;
+    if (!$(canvasSelector)) activate(currentTab());
+    if (completed || replayOnStart) {
+      const tab = completed ? $(`${tabSelector}[data-${kind}="${order[0]}"]`) : currentTab();
+      activate(tab);
+      remaining = duration(keyOf(tab));
+      completed = false;
+      replayOnStart = false;
+    } else if (remaining === null) {
+      remaining = duration(keyOf(currentTab()));
+    }
+    userStopped = false;
+    schedule();
+  };
+
+  $$(tabSelector).forEach((tab) => tab.addEventListener('click', () => {
+    seen = true;
+    pause(true);
+    activate(tab);
+    remaining = null;
+    completed = false;
+    replayOnStart = true;
+  }));
+  button.addEventListener('click', () => {
+    seen = true;
+    if (timer) pause(true);
+    else play();
+  });
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    activate($(`${tabSelector}[data-${kind}="${order[0]}"]`));
+    return;
+  }
+  new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      if (!seen) {
+        seen = true;
+        activate($(`${tabSelector}[data-${kind}="${order[0]}"]`));
+        remaining = duration(order[0]);
+        play();
+      } else if (!userStopped && !completed && !timer && remaining !== null) {
+        play();
+      }
+    } else if (timer) {
+      pause();
+    }
+  }, { threshold }).observe($(observerSelector));
 }
-$$('[data-method]').forEach((button) => button.addEventListener('click', () => { methodTourSeen = true; stopMethodTour(); activateMethod(button); }));
-$('#methodAuto').addEventListener('click', () => {
-  methodTourSeen = true;
-  if (methodTimer) stopMethodTour();
-  else startMethodTour();
-});
-if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  const methodObserver = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && !methodTourSeen) {
-      methodTourSeen = true;
-      activateMethod($('[data-method="acquire"]'));
-      startMethodTour();
-    } else if (!entries[0].isIntersecting && methodTimer) stopMethodTour();
-  }, { threshold: .22 });
-  methodObserver.observe($('#methodStage'));
-} else {
-  UpcastMotion.mountMethod('acquire');
-}
+bindMotionTour({ kind: 'idea', order: ideaOrder, tabSelector: '[data-idea]', buttonSelector: '#ideaAuto', canvasSelector: '#ideaPanelArt .motion-canvas', observerSelector: '#ideaPanel', threshold: .28, activate: activateIdea });
+bindMotionTour({ kind: 'method', order: methodOrder, tabSelector: '[data-method]', buttonSelector: '#methodAuto', canvasSelector: '[data-method-panel]:not([hidden]) .motion-canvas', observerSelector: '#methodStage', threshold: .22, activate: activateMethod });
 const featureExplanations = {
   page: 'PAGE-4D provides geometry features and point maps that anchor the shared physical vocabulary.',
   dino: 'DINOv2 supplies patch-level visual structure to the continuous appearance path and the visual reconstruction target.',

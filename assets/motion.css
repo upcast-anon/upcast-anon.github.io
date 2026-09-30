@@ -46,14 +46,15 @@
 .motion-svg .motion-math { font-family: Georgia, serif; font-size: 22px; font-style: italic; fill: #37525d; }
 .motion-svg .motion-box-title { font-size: 25px; font-weight: 800; }
 .motion-svg .motion-box-sub { font-size: 14px; fill: #60716e; }
-.motion-rise { opacity: 0; animation: motionReveal .55s ease-out var(--delay, 0s) forwards; }
-.motion-trace { stroke-dasharray: 1100; stroke-dashoffset: 1100; animation: motionDraw .95s cubic-bezier(.22,.75,.28,1) var(--delay, 0s) forwards; }
-.motion-trace.dashed { stroke-dasharray: 10 7; stroke-dashoffset: 350; animation: motionDash .95s linear var(--delay, 0s) forwards; }
-.motion-arrow-arrive { opacity: 0; animation: motionArrow .18s ease-out var(--delay, 0s) forwards; }
+.motion-rise { opacity: 0; animation: motionReveal .42s ease-out var(--delay, 0s) forwards; }
+.motion-trace { stroke-dasharray: var(--path-length); stroke-dashoffset: var(--path-length); animation: motionDraw var(--draw-duration, .6s) ease-in-out var(--delay, 0s) forwards; }
+.motion-trace.dashed { animation: motionDraw var(--draw-duration, .6s) ease-in-out var(--delay, 0s) forwards, motionFade .14s linear var(--fade-delay, 0s) forwards; }
+.motion-dashed-final { opacity: 0; animation: motionArrow .14s ease-out var(--delay, 0s) forwards; }
+.motion-arrow-arrive { opacity: 0; animation: motionArrow .14s ease-out var(--delay, 0s) forwards; }
 @keyframes motionReveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes motionDraw { to { stroke-dashoffset: 0; } }
-@keyframes motionDash { to { stroke-dashoffset: 0; } }
 @keyframes motionArrow { to { opacity: 1; } }
+@keyframes motionFade { to { opacity: 0; } }
 .method-tour-bar { display: flex; align-items: center; justify-content: space-between; min-height: 52px; border-top: 1px solid #c9d9d3; color: #55736a; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
 .method-tour-bar b { margin-left: 14px; color: #25745d; font-variant-numeric: tabular-nums; }
 .method-tour-bar .icon-button { width: 34px; height: 34px; border: 1px solid #b9d2c2; color: #1b7051; border-radius: 50%; }
@@ -77,7 +78,7 @@
 .stage-value { font-size: 18px; font-weight: 800; fill: #1b6750; font-family: Arial, Helvetica, sans-serif; }
 .stage-name { font-size: 14px; fill: #536b61; font-family: Arial, Helvetica, sans-serif; }
 #stagePlotNote { margin: 0; color: #65776c; font-size: 12px; }
-.motion-canvas::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 3px; background: #339775; transform: scaleX(0); transform-origin: left; animation: motionProgress 5.5s linear forwards; }
+.motion-canvas::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 3px; background: #339775; transform: scaleX(0); transform-origin: left; animation: motionProgress var(--sequence-duration, 4.6s) linear forwards; }
 .motion-canvas.is-paused::after { animation-play-state: paused; }
 @keyframes motionProgress { to { transform: scaleX(1); } }
 @media (max-width: 900px) {
@@ -108,7 +109,8 @@
 @media (prefers-reduced-motion: reduce) {
   .motion-rise { opacity: 1; animation: none; }
   .motion-trace { stroke-dashoffset: 0; animation: none; }
-  .motion-trace.dashed { stroke-dasharray: 10 7; animation: none; }
+  .motion-trace.dashed { opacity: 0; animation: none; }
+  .motion-dashed-final { opacity: 1; animation: none; }
   .motion-arrow-arrive { opacity: 1; animation: none; }
   .motion-canvas::after { transform: scaleX(1); animation: none; }
 }
