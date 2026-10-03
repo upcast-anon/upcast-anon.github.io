@@ -49,6 +49,9 @@ body { background: var(--surface); color: var(--text); }
 .release-grid p { font-size: 14px; color: var(--muted); min-height: 70px; }
 .release-status { font-size: 12px; font-weight: 700; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
 .release-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #ba8f35; }
+.release-link { display: inline-flex; align-items: center; gap: 8px; color: var(--green); font-size: 14px; font-weight: 700; }
+.release-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.release-link svg { width: 16px; height: 16px; margin-bottom: 0; color: currentColor; }
 /* The storyboard is a responsive diagram, not a horizontally panned print figure. */
 .motion-canvas { --motion-line: #dce3e6; --motion-ink: #283841; --motion-muted: #566973; background: var(--surface); border: 0; min-width: 0; aspect-ratio: auto; margin: 0; }
 .motion-viewport { overflow: visible; }

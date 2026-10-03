@@ -20,6 +20,12 @@ def test_page(browser, width: int, height: int) -> None:
     page.wait_for_timeout(600)
     assert page.title() == "UPCAST | Factorized World Transitions"
     assert page.locator('a[href$="paper.pdf"]').count() == 0
+    code_link = page.locator('#release a[href="https://github.com/upcast-anon/UPCAST"]')
+    assert code_link.count() == 1
+    assert code_link.get_attribute('target') == '_blank'
+    assert 'noopener' in code_link.get_attribute('rel').split()
+    assert page.locator('#release .release-status').count() == 2
+    assert 'Code release pending' not in page.locator('#release').inner_text()
     assert page.locator("#driftChart path").count() == 2
     assert page.locator("#horizonTable tbody tr").count() == 5
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), f"horizontal overflow at {width}px"

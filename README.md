@@ -64,5 +64,6 @@ the affected cached segments after changing a scene. After changing narration,
 also remove the corresponding voice files and `manifest.json`. Published assets
 are `assets/media/upcast-overview.mp4`, its poster, captions and chapter times.
 The MP4 is 1920 x 1080 at 24 fps; source generation clips retain their original
-256 x 256 resolution and 8 fps. Code/checkpoint/paper release entries are
-explicitly pending, not links to unpublished repositories.
+256 x 256 resolution and 8 fps. The Code resource links to the public
+[UPCAST repository](https://github.com/upcast-anon/UPCAST). Checkpoint and paper
+release entries remain pending; no paper PDF is published here.
